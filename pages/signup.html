@@ -1,0 +1,102 @@
+<?php include __DIR__ . '/../components/header.php'; ?>
+<div class="login-page">
+  <div class="container py-5">
+    <div class="row g-4 align-items-center">
+      <div class="col-lg-6">
+        <div class="glass-panel p-5 h-100 fade-in login-hero">
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <span class="brand-pill brand-pill-lg">webIT.</span>
+            <span class="badge-soft">Create your account</span>
+          </div>
+          <h1 class="display-6 fw-bold mb-3">Launch your learning hub</h1>
+          <p class="text-muted mb-4">Start hosting webinars, sharing resources, and tracking your learning journey in one place.</p>
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="mini-stat">
+                <i class="bi bi-camera-video"></i>
+                <div>
+                  <div class="fw-semibold">Host instantly</div>
+                  <div class="text-muted small">Create events fast</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="mini-stat">
+                <i class="bi bi-people"></i>
+                <div>
+                  <div class="fw-semibold">Invite teams</div>
+                  <div class="text-muted small">Grow your audience</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="mini-stat">
+                <i class="bi bi-calendar2-check"></i>
+                <div>
+                  <div class="fw-semibold">Plan smarter</div>
+                  <div class="text-muted small">Calendar-ready</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="mini-stat">
+                <i class="bi bi-lightning-charge"></i>
+                <div>
+                  <div class="fw-semibold">Boosted by AI</div>
+                  <div class="text-muted small">Personalized picks</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="glass-panel p-5 h-100 login-form">
+          <h2 class="h4 fw-bold mb-4">Create an account</h2>
+          <?php if ($message): ?>
+            <div class="alert alert-success"><?php echo sanitize($message); ?></div>
+          <?php endif; ?>
+          <?php if ($error): ?>
+            <div class="alert alert-danger"><?php echo sanitize($error); ?></div>
+          <?php endif; ?>
+          <form method="post">
+            <div class="mb-3">
+              <label class="form-label">Full name</label>
+              <input type="text" name="name" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Email</label>
+              <input type="email" name="email" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Password</label>
+              <input type="password" name="password" class="form-control" required>
+              <div class="form-text">Min 8 characters, at least one uppercase letter and one number.</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Confirm password</label>
+              <input type="password" name="confirm_password" class="form-control" required>
+            </div>
+            <div class="mb-4">
+              <label class="form-label">Timezone</label>
+              <div class="tz-picker" data-timezone-picker>
+                <input class="form-control" type="text" placeholder="Type a city or region to search" data-timezone-input>
+                <input type="hidden" name="timezone" value="UTC" data-timezone-value>
+                <div class="tz-menu" data-timezone-menu>
+                  <?php foreach ($timezones as $tz): ?>
+                    <button type="button" class="tz-item" data-timezone-item="<?php echo sanitize($tz); ?>"><?php echo sanitize($tz); ?></button>
+                  <?php endforeach; ?>
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-primary w-100" type="submit">Create account</button>
+          </form>
+          <div class="mt-4 text-muted small">
+            Already have an account? <a class="text-decoration-none" href="/login.php">Sign in</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<?php include __DIR__ . '/../components/footer.php'; ?>

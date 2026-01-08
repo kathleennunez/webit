@@ -1,0 +1,83 @@
+<?php include __DIR__ . '/../components/header.php'; ?>
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h4 fw-bold">Account profile</h1>
+      <p class="text-muted">Update your personal details and learning preferences.</p>
+    </div>
+    <a class="btn btn-outline-primary" href="/dashboard.php"><i class="bi bi-arrow-left me-2"></i>Back</a>
+  </div>
+
+  <?php if ($message): ?>
+    <div class="alert alert-success"><?php echo sanitize($message); ?></div>
+  <?php endif; ?>
+
+  <div class="glass-panel p-4">
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <img src="<?php echo sanitize(avatar_url($profileUser)); ?>" class="avatar-lg" alt="Profile">
+      <div>
+        <h5 class="fw-bold mb-1"><?php echo sanitize($profileUser['name']); ?></h5>
+        <div class="text-muted"><?php echo sanitize($profileUser['email']); ?></div>
+      </div>
+    </div>
+
+    <?php if ($isSelf): ?>
+      <h5 class="fw-bold">Personal info</h5>
+      <form method="post" enctype="multipart/form-data">
+        <div class="mb-3">
+          <label class="form-label">Profile photo</label>
+          <input class="form-control" type="file" name="avatar" accept="image/*">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Full name</label>
+          <input class="form-control" name="name" value="<?php echo sanitize($profileUser['name']); ?>" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Email</label>
+          <input class="form-control" name="email" type="email" value="<?php echo sanitize($profileUser['email']); ?>" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Phone</label>
+          <input class="form-control" name="phone" value="<?php echo sanitize($profileUser['phone'] ?? ''); ?>">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Company</label>
+          <input class="form-control" name="company" value="<?php echo sanitize($profileUser['company'] ?? ''); ?>">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Location</label>
+          <input class="form-control" name="location" value="<?php echo sanitize($profileUser['location'] ?? ''); ?>">
+        </div>
+        <div class="mb-3">
+        <label class="form-label">Timezone</label>
+        <div class="tz-picker" data-timezone-picker>
+          <?php $tzHidden = $profileUser['timezone'] ?? 'UTC'; ?>
+          <?php $tzDisplay = $tzHidden === 'UTC' ? '' : $tzHidden; ?>
+          <input class="form-control" type="text" value="<?php echo sanitize($tzDisplay); ?>" placeholder="Type a city or region to search" data-timezone-input>
+          <input type="hidden" name="timezone" value="<?php echo sanitize($tzHidden); ?>" data-timezone-value>
+          <div class="tz-menu" data-timezone-menu>
+            <?php foreach ($timezones as $tz): ?>
+              <button type="button" class="tz-item" data-timezone-item="<?php echo sanitize($tz); ?>"><?php echo sanitize($tz); ?></button>
+            <?php endforeach; ?>
+          </div>
+        </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Interests (comma separated)</label>
+          <input class="form-control" name="interests" value="<?php echo sanitize(implode(', ', $profileUser['interests'] ?? [])); ?>">
+        </div>
+        <div class="mb-4">
+          <label class="form-label">Bio</label>
+          <textarea class="form-control" name="bio" rows="4"><?php echo sanitize($profileUser['bio'] ?? ''); ?></textarea>
+        </div>
+        <button class="btn btn-primary">Save changes</button>
+      </form>
+    <?php else: ?>
+      <div class="text-muted">Timezone: <?php echo sanitize($profileUser['timezone'] ?? ($timezones[0] ?? 'UTC')); ?></div>
+      <div class="text-muted">Location: <?php echo sanitize($profileUser['location'] ?? ''); ?></div>
+      <div class="text-muted">Company: <?php echo sanitize($profileUser['company'] ?? ''); ?></div>
+      <div class="mt-3 text-muted"><?php echo sanitize($profileUser['bio'] ?? ''); ?></div>
+    <?php endif; ?>
+  </div>
+</div>
+<?php include __DIR__ . '/../components/footer.php'; ?>

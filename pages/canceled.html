@@ -1,0 +1,22 @@
+<?php include __DIR__ . '/../components/header.php'; ?>
+<div class="container py-5">
+  <div class="glass-panel p-4">
+    <div class="d-flex align-items-center gap-3 mb-3">
+      <div class="icon-pill">
+        <i class="bi bi-x-circle"></i>
+      </div>
+      <div>
+        <h1 class="h4 fw-bold mb-1">Event canceled</h1>
+        <p class="text-muted mb-0">This webinar was canceled by the host.</p>
+      </div>
+    </div>
+    <?php if ($title): ?>
+      <div class="mb-3">
+        <div class="fw-semibold"><?php echo sanitize($title); ?></div>
+        <div class="text-muted small">The registration was removed and the event is no longer available.</div>
+      </div>
+    <?php endif; ?>
+    <a class="btn btn-outline-primary" href="/home.php">Back to Browse</a>
+  </div>
+</div>
+<?php include __DIR__ . '/../components/footer.php'; ?>

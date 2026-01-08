@@ -1,0 +1,35 @@
+<?php include __DIR__ . '/../components/header.php'; ?>
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h4 fw-bold">Drafts</h1>
+      <p class="text-muted">Webinars saved as drafts.</p>
+    </div>
+    <a class="btn btn-outline-primary" href="/create-webinar.php"><i class="bi bi-plus-circle me-2"></i>Create</a>
+  </div>
+
+  <div class="glass-panel p-4">
+    <?php if (!$drafts): ?>
+      <div class="text-muted">No drafts yet.</div>
+    <?php endif; ?>
+    <?php foreach ($drafts as $draft): ?>
+      <div class="d-flex justify-content-between align-items-center border-bottom py-3">
+        <div>
+          <a class="fw-semibold text-decoration-none text-dark" href="/create-webinar.php?edit=<?php echo sanitize($draft['id']); ?>">
+            <?php echo sanitize($draft['title']); ?>
+          </a>
+          <div class="text-muted small"><?php echo sanitize($draft['category']); ?> • <?php echo sanitize(format_datetime_for_user($draft['datetime'] ?? '', $user['timezone'] ?? null)); ?></div>
+        </div>
+        <div class="d-flex gap-2">
+          <a class="btn btn-outline-primary btn-sm" href="/create-webinar.php?edit=<?php echo sanitize($draft['id']); ?>">Edit</a>
+          <form method="post">
+            <input type="hidden" name="publish_draft" value="1">
+            <input type="hidden" name="webinar_id" value="<?php echo sanitize($draft['id']); ?>">
+            <button class="btn btn-primary btn-sm">Publish</button>
+          </form>
+        </div>
+      </div>
+    <?php endforeach; ?>
+  </div>
+</div>
+<?php include __DIR__ . '/../components/footer.php'; ?>

@@ -1,0 +1,50 @@
+<?php include __DIR__ . '/../components/header.php'; ?>
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h4 fw-bold">Notifications</h1>
+      <p class="text-muted">Unread updates from your registrations and subscriptions.</p>
+    </div>
+  </div>
+
+  <div class="glass-panel p-4 notifications-list">
+    <div class="d-flex justify-content-end mb-3">
+      <form method="post">
+        <button class="btn btn-outline-primary btn-sm" type="submit" name="mark_all_read" value="1">Mark all as read</button>
+      </form>
+    </div>
+    <?php if (!$notifications): ?>
+      <div class="text-muted">No unread notifications.</div>
+    <?php endif; ?>
+    <?php foreach ($notifications as $note): ?>
+      <?php $webinarId = $note['payload']['meta']['webinar_id'] ?? ''; ?>
+      <?php $webinarStatus = $note['payload']['meta']['status'] ?? ''; ?>
+      <?php $webinarTitle = $note['payload']['meta']['title'] ?? ''; ?>
+      <div class="d-flex justify-content-between align-items-start border-bottom py-3 <?php echo !($note['payload']['read'] ?? false) ? 'notification-unread' : ''; ?>">
+        <div>
+          <?php if ($webinarId): ?>
+            <?php if ($webinarStatus === 'canceled'): ?>
+              <a class="fw-semibold text-decoration-none text-dark" href="/canceled.php?id=<?php echo sanitize($webinarId); ?>&title=<?php echo urlencode($webinarTitle); ?>">
+                <?php echo sanitize($note['payload']['message'] ?? 'Update'); ?>
+              </a>
+            <?php else: ?>
+              <a class="fw-semibold text-decoration-none text-dark" href="/webinar.php?id=<?php echo sanitize($webinarId); ?>">
+                <?php echo sanitize($note['payload']['message'] ?? 'Update'); ?>
+              </a>
+            <?php endif; ?>
+          <?php else: ?>
+            <div class="fw-semibold"><?php echo sanitize($note['payload']['message'] ?? 'Update'); ?></div>
+          <?php endif; ?>
+          <div class="text-muted small">Type: <?php echo sanitize($note['payload']['category'] ?? $note['type']); ?></div>
+        </div>
+        <div class="text-end">
+          <?php if (!($note['payload']['read'] ?? false)): ?>
+            <span class="badge-soft notification-badge">Unread</span>
+          <?php endif; ?>
+          <div class="text-muted small"><?php echo sanitize($note['created_at']); ?></div>
+        </div>
+      </div>
+    <?php endforeach; ?>
+  </div>
+</div>
+<?php include __DIR__ . '/../components/footer.php'; ?>

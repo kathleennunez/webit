@@ -1,0 +1,78 @@
+<?php include __DIR__ . '/../components/header.php'; ?>
+<div class="login-page">
+  <div class="container py-5">
+    <div class="row g-4 align-items-stretch">
+      <div class="col-lg-6 d-flex">
+        <div class="glass-panel p-5 h-100 fade-in login-hero login-panel">
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <span class="brand-pill brand-pill-lg">webIT.</span>
+        <span class="badge-soft">Subscription Webinar Hub</span>
+      </div>
+        <h1 class="display-6 fw-bold mb-3">Launch your learning hub</h1>
+        <p class="text-muted mb-4">Start hosting webinars, sharing resources, and tracking your learning journey in one place.</p>
+        <div class="row g-3">
+          <div class="col-6">
+            <div class="mini-stat">
+              <i class="bi bi-broadcast-pin"></i>
+              <div>
+                <div class="fw-semibold">Host instantly</div>
+                <div class="text-muted small">Create events fast</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="mini-stat">
+              <i class="bi bi-graph-up-arrow"></i>
+              <div>
+                <div class="fw-semibold">Invite teams</div>
+                <div class="text-muted small">Grow your audience</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="mini-stat">
+              <i class="bi bi-shield-check"></i>
+              <div>
+                <div class="fw-semibold">Plan smarter</div>
+                <div class="text-muted small">Calendar-ready</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="mini-stat">
+              <i class="bi bi-stars"></i>
+              <div>
+                <div class="fw-semibold">Boosted by AI</div>
+                <div class="text-muted small">Personalized picks</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+      <div class="col-lg-6 d-flex">
+        <div class="glass-panel p-5 h-100 login-form login-panel">
+        <h2 class="h4 fw-bold mb-4">Sign in</h2>
+        <?php if ($error): ?>
+          <div class="alert alert-danger"><?php echo sanitize($error); ?></div>
+        <?php endif; ?>
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" name="email" class="form-control" required>
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Password</label>
+            <input type="password" name="password" class="form-control" required>
+          </div>
+          <button class="btn btn-primary w-100" type="submit">Sign In</button>
+        </form>
+        <div class="mt-4 text-muted small">
+          New here? <a class="text-decoration-none" href="/signup.php">Create an account</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<?php include __DIR__ . '/../components/footer.php'; ?>
