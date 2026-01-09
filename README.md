@@ -19,6 +19,7 @@ Subscription-based webinar and virtual event management web app built with PHP, 
 - Landing page: `/index.php`
 - Sign in: `/app/login.php`
 - Sign up: `/app/signup.php`
+- Admin center (admin only): `/app/admin.php`
 - Browse: `/app/home.php`
 - Dashboard: `/app/dashboard.php`
 - Create webinar: `/app/create-webinar.php`
@@ -45,6 +46,10 @@ To generate sample users and webinars:
 ```bash
 php scripts/seed_data.php
 ```
+
+## Admin access
+- Admin accounts are restricted to the admin center and do not see user/host features.
+- Promote a user by setting `users.role = 'admin'` in MySQL.
 
 ## Notes
 - Dark/light mode toggle is stored in `localStorage`.
