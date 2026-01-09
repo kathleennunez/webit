@@ -1,0 +1,102 @@
+<?php include __DIR__ . '/../components/header.php'; ?>
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h4 fw-bold">Settings</h1>
+      <p class="text-muted">Manage your email, password, and account access.</p>
+    </div>
+    <a class="btn btn-outline-primary" href="/app/account.php"><i class="bi bi-arrow-left me-2"></i>Back</a>
+  </div>
+
+  <div class="glass-panel p-4 mb-4">
+    <h5 class="fw-bold">Change email</h5>
+    <?php if ($emailMessage): ?>
+      <div class="alert alert-success"><?php echo sanitize($emailMessage); ?></div>
+    <?php endif; ?>
+    <?php if ($emailError): ?>
+      <div class="alert alert-danger"><?php echo sanitize($emailError); ?></div>
+    <?php endif; ?>
+    <form method="post">
+      <div class="mb-3">
+        <label class="form-label">New email</label>
+        <input class="form-control" type="email" name="new_email" value="<?php echo sanitize($user['email']); ?>" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Current password</label>
+        <div class="input-group">
+          <input class="form-control" type="password" name="current_password_email" data-password-input required>
+          <button class="btn btn-outline-primary password-toggle" type="button" data-password-toggle aria-label="Show password">
+            <i class="bi bi-eye"></i>
+          </button>
+        </div>
+      </div>
+      <button class="btn btn-primary" type="submit" name="change_email" value="1">Update email</button>
+    </form>
+  </div>
+
+  <div class="glass-panel p-4 mb-4">
+    <h5 class="fw-bold">Change password</h5>
+    <?php if ($passwordMessage): ?>
+      <div class="alert alert-success"><?php echo sanitize($passwordMessage); ?></div>
+    <?php endif; ?>
+    <?php if ($passwordError): ?>
+      <div class="alert alert-danger"><?php echo sanitize($passwordError); ?></div>
+    <?php endif; ?>
+    <form method="post">
+      <div class="mb-3">
+        <label class="form-label">Current password</label>
+        <div class="input-group">
+          <input class="form-control" type="password" name="current_password" data-password-input required>
+          <button class="btn btn-outline-primary password-toggle" type="button" data-password-toggle aria-label="Show password">
+            <i class="bi bi-eye"></i>
+          </button>
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">New password</label>
+        <div class="input-group">
+          <input class="form-control" type="password" name="new_password" data-password-input required>
+          <button class="btn btn-outline-primary password-toggle" type="button" data-password-toggle aria-label="Show password">
+            <i class="bi bi-eye"></i>
+          </button>
+        </div>
+        <div class="form-text">Min 8 characters, at least one uppercase letter and one number.</div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Confirm new password</label>
+        <div class="input-group">
+          <input class="form-control" type="password" name="confirm_password" data-password-input required>
+          <button class="btn btn-outline-primary password-toggle" type="button" data-password-toggle aria-label="Show password">
+            <i class="bi bi-eye"></i>
+          </button>
+        </div>
+      </div>
+      <button class="btn btn-primary" type="submit" name="change_password" value="1">Update password</button>
+    </form>
+  </div>
+
+  <div class="glass-panel p-4 border border-danger">
+    <h5 class="fw-bold text-danger">Delete account</h5>
+    <?php if ($deleteError): ?>
+      <div class="alert alert-danger"><?php echo sanitize($deleteError); ?></div>
+    <?php endif; ?>
+    <p class="text-muted small">This permanently deletes your account, hosted webinars, and registrations.</p>
+    <form method="post">
+      <div class="mb-3">
+        <label class="form-label">Current password</label>
+        <div class="input-group">
+          <input class="form-control" type="password" name="current_password_delete" data-password-input required>
+          <button class="btn btn-outline-primary password-toggle" type="button" data-password-toggle aria-label="Show password">
+            <i class="bi bi-eye"></i>
+          </button>
+        </div>
+      </div>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" name="confirm_delete" value="yes" id="confirmDelete">
+        <label class="form-check-label" for="confirmDelete">I understand this action cannot be undone.</label>
+      </div>
+      <button class="btn btn-outline-danger" type="submit" name="delete_account" value="1" onclick="return confirm('Delete your account? This action cannot be undone.');">Delete account</button>
+    </form>
+  </div>
+</div>
+<?php include __DIR__ . '/../components/footer.php'; ?>

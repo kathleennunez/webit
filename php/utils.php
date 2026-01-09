@@ -29,7 +29,7 @@ function get_request_body(): array {
 
 function require_login(): void {
   if (!isset($_SESSION['user'])) {
-    redirect_to('/login.php');
+    redirect_to('/app/login.php');
   }
 }
 
@@ -43,6 +43,13 @@ function require_role(string $role): void {
     http_response_code(403);
     echo 'Forbidden';
     exit;
+  }
+}
+
+function require_non_admin(): void {
+  $user = current_user();
+  if ($user && ($user['role'] ?? '') === 'admin') {
+    redirect_to('/app/admin.php');
   }
 }
 

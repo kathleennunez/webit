@@ -1,0 +1,44 @@
+<?php include __DIR__ . '/../components/header.php'; ?>
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h4 fw-bold">Waitlist</h1>
+      <p class="text-muted">Review waitlisted attendees for each webinar.</p>
+    </div>
+    <a class="btn btn-outline-primary" href="/app/dashboard.php"><i class="bi bi-arrow-left me-2"></i>Back</a>
+  </div>
+
+  <div class="glass-panel p-4">
+    <?php if (!$hostedWebinars): ?>
+      <div class="text-muted">No hosted webinars yet.</div>
+    <?php endif; ?>
+    <?php foreach ($hostedWebinars as $webinar): ?>
+      <?php $waitlistEntries = $waitlistByWebinar[$webinar['id']] ?? []; ?>
+      <div class="border rounded-4 p-3 mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="d-flex align-items-center gap-3">
+            <img src="<?php echo sanitize($webinar['image'] ?? '/assets/images/webinar-education.svg'); ?>" class="event-thumb" alt="Event thumbnail">
+            <a class="fw-semibold text-decoration-none text-dark" href="/app/webinar.php?id=<?php echo sanitize($webinar['id']); ?>">
+              <?php echo sanitize($webinar['title']); ?>
+            </a>
+          </div>
+          <span class="text-muted small"><?php echo sanitize((string)count($waitlistEntries)); ?> waitlisted</span>
+        </div>
+        <?php if (!$waitlistEntries): ?>
+          <div class="text-muted small">No waitlist entries.</div>
+        <?php endif; ?>
+        <?php foreach ($waitlistEntries as $entry): ?>
+          <?php $waitUser = $userMap[$entry['user_id']] ?? null; ?>
+          <div class="d-flex justify-content-between align-items-center border-top py-2">
+            <div>
+              <div class="fw-semibold small"><?php echo sanitize($waitUser['name'] ?? 'Attendee'); ?></div>
+              <div class="text-muted small"><?php echo sanitize($waitUser['email'] ?? ''); ?></div>
+            </div>
+            <div class="text-muted small"><?php echo sanitize($entry['created_at'] ?? ''); ?></div>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    <?php endforeach; ?>
+  </div>
+</div>
+<?php include __DIR__ . '/../components/footer.php'; ?>

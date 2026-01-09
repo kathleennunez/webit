@@ -70,12 +70,22 @@
             </div>
             <div class="mb-3">
               <label class="form-label">Password</label>
-              <input type="password" name="password" class="form-control" required>
+              <div class="input-group">
+                <input type="password" name="password" class="form-control" data-password-input required>
+                <button class="btn btn-outline-primary password-toggle" type="button" data-password-toggle aria-label="Show password">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
               <div class="form-text">Min 8 characters, at least one uppercase letter and one number.</div>
             </div>
             <div class="mb-3">
               <label class="form-label">Confirm password</label>
-              <input type="password" name="confirm_password" class="form-control" required>
+              <div class="input-group">
+                <input type="password" name="confirm_password" class="form-control" data-password-input required>
+                <button class="btn btn-outline-primary password-toggle" type="button" data-password-toggle aria-label="Show password">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
             </div>
             <div class="mb-4">
               <label class="form-label">Timezone</label>
@@ -92,7 +102,7 @@
             <button class="btn btn-primary w-100" type="submit">Create account</button>
           </form>
           <div class="mt-4 text-muted small">
-            Already have an account? <a class="text-decoration-none" href="/login.php">Sign in</a>
+            Already have an account? <a class="text-decoration-none" href="/app/login.php">Sign in</a>
           </div>
         </div>
       </div>

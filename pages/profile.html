@@ -1,0 +1,209 @@
+<?php include __DIR__ . '/../components/header.php'; ?>
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h4 fw-bold">Profile</h1>
+      <p class="text-muted">Personal info and hosted event history.</p>
+    </div>
+    <a class="btn btn-outline-primary" href="/app/home.php"><i class="bi bi-arrow-left me-2"></i>Back</a>
+  </div>
+
+  <div class="glass-panel p-4 mb-4">
+    <div class="d-flex align-items-center gap-3">
+      <img src="<?php echo sanitize(avatar_url($profileUser)); ?>" class="avatar-lg" alt="Profile">
+      <div>
+        <h5 class="fw-bold mb-1"><?php echo sanitize($profileUser['name'] ?? ''); ?></h5>
+        <div class="text-muted"><?php echo sanitize($profileUser['email'] ?? ''); ?></div>
+        <?php if (!empty($profileUser['company'])): ?>
+          <div class="text-muted small"><?php echo sanitize($profileUser['company']); ?></div>
+        <?php endif; ?>
+        <div class="d-flex flex-wrap align-items-center gap-3 mt-2">
+          <div class="text-muted small">Past events: <?php echo sanitize((string)$pastEventCount); ?></div>
+          <?php if ($ratingCount > 0): ?>
+            <div class="d-flex align-items-center gap-2">
+              <div class="star-rating small">
+                <?php for ($i = 1; $i <= 5; $i++): ?>
+                  <i class="bi <?php echo $averageRating >= $i ? 'bi-star-fill' : 'bi-star'; ?>"></i>
+                <?php endfor; ?>
+              </div>
+              <div class="text-muted small"><?php echo sanitize((string)$averageRating); ?> avg (<?php echo sanitize((string)$ratingCount); ?>)</div>
+            </div>
+          <?php else: ?>
+            <div class="text-muted small">No ratings yet</div>
+          <?php endif; ?>
+        </div>
+      </div>
+    </div>
+    <?php if (!empty($profileUser['bio'])): ?>
+      <div class="mt-3 text-muted"><?php echo sanitize($profileUser['bio']); ?></div>
+    <?php endif; ?>
+  </div>
+
+  <div class="glass-panel p-4 mb-4">
+    <h5 class="fw-bold mb-3">Upcoming events</h5>
+    <?php if (!$futureEvents): ?>
+      <div class="text-muted">No upcoming events yet.</div>
+    <?php endif; ?>
+    <div class="row row-cols-1 row-cols-md-2 g-3">
+      <?php foreach ($futureEvents as $event): ?>
+        <?php $eventTime = format_datetime_for_user($event['datetime'] ?? '', $viewer['timezone'] ?? null); ?>
+        <div class="col">
+          <a class="text-decoration-none text-reset" href="/app/webinar.php?id=<?php echo sanitize($event['id']); ?>">
+            <div class="glass-panel p-3 h-100 card-hover">
+              <img src="<?php echo sanitize($event['image'] ?? '/assets/images/webinar-education.svg'); ?>" class="w-100 event-card-thumb mb-3" alt="Event thumbnail">
+              <div class="fw-semibold"><?php echo sanitize($event['title']); ?></div>
+              <div class="text-muted small"><?php echo sanitize($eventTime); ?></div>
+            </div>
+          </a>
+        </div>
+      <?php endforeach; ?>
+    </div>
+  </div>
+
+  <div class="glass-panel p-4 mb-4">
+    <h5 class="fw-bold mb-3">Past events</h5>
+    <?php if (!$pastEvents): ?>
+      <div class="text-muted">No past events yet.</div>
+    <?php endif; ?>
+    <div class="row row-cols-1 row-cols-md-2 g-3">
+      <?php foreach ($pastEvents as $event): ?>
+        <?php $eventTime = format_datetime_for_user($event['datetime'] ?? '', $viewer['timezone'] ?? null); ?>
+        <div class="col">
+          <a class="text-decoration-none text-reset" href="/app/profile.php?user_id=<?php echo sanitize($profileUser['id']); ?>&event=<?php echo sanitize($event['id']); ?>">
+            <div class="glass-panel p-3 h-100 card-hover">
+              <img src="<?php echo sanitize($event['image'] ?? '/assets/images/webinar-education.svg'); ?>" class="w-100 event-card-thumb mb-3" alt="Event thumbnail">
+              <div class="fw-semibold"><?php echo sanitize($event['title']); ?></div>
+              <div class="text-muted small"><?php echo sanitize($eventTime); ?></div>
+            </div>
+          </a>
+        </div>
+      <?php endforeach; ?>
+    </div>
+  </div>
+
+  <?php if ($selectedEvent): ?>
+    <div class="glass-panel p-4">
+      <?php $eventTime = format_datetime_for_user($selectedEvent['datetime'] ?? '', $viewer['timezone'] ?? null); ?>
+      <div class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+          <h5 class="fw-bold mb-1"><?php echo sanitize($selectedEvent['title']); ?></h5>
+          <div class="text-muted small"><?php echo sanitize($eventTime); ?></div>
+        </div>
+        <a class="btn btn-outline-primary btn-sm" href="/app/profile.php?user_id=<?php echo sanitize($profileUser['id']); ?>" aria-label="Close details">
+          <i class="bi bi-x"></i>
+        </a>
+        <?php if (!empty($selectedEvent['category'])): ?>
+          <span class="badge-soft"><?php echo sanitize($selectedEvent['category']); ?></span>
+        <?php endif; ?>
+      </div>
+      <?php if (!empty($selectedEvent['description'])): ?>
+        <p class="text-muted mb-4"><?php echo sanitize($selectedEvent['description']); ?></p>
+      <?php endif; ?>
+      <?php if ($canLeaveFeedback): ?>
+        <a class="btn btn-outline-primary btn-sm mb-4" href="#feedback-form">Leave feedback</a>
+      <?php endif; ?>
+
+      <div class="feedback-section">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <h6 class="fw-bold mb-0">Attendee feedback</h6>
+          <?php if ($eventRatingCount > 0): ?>
+            <div class="d-flex align-items-center gap-2">
+              <div class="star-rating small">
+                <?php for ($i = 1; $i <= 5; $i++): ?>
+                  <i class="bi <?php echo $eventAverageRating >= $i ? 'bi-star-fill' : 'bi-star'; ?>"></i>
+                <?php endfor; ?>
+              </div>
+              <div class="text-muted small"><?php echo sanitize((string)$eventAverageRating); ?> avg</div>
+            </div>
+          <?php endif; ?>
+        </div>
+        <?php if (!$feedbackEntries): ?>
+          <div class="text-muted small mb-3">No feedback yet.</div>
+        <?php endif; ?>
+        <?php foreach ($feedbackEntries as $entry): ?>
+          <?php $author = $feedbackAuthors[$entry['user_id']] ?? null; ?>
+          <?php $entryRating = (int)($entry['rating'] ?? 0); ?>
+          <div class="border-bottom py-3">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <img src="<?php echo sanitize(avatar_url($author)); ?>" class="avatar-sm" alt="Attendee">
+              <div class="fw-semibold small"><?php echo sanitize($author['name'] ?? 'Attendee'); ?></div>
+              <?php if ($entryRating > 0): ?>
+                <div class="star-rating small">
+                  <?php for ($i = 1; $i <= 5; $i++): ?>
+                    <i class="bi <?php echo $entryRating >= $i ? 'bi-star-fill' : 'bi-star'; ?>"></i>
+                  <?php endfor; ?>
+                </div>
+              <?php endif; ?>
+              <div class="text-muted small">• <?php echo sanitize($entry['created_at'] ?? ''); ?></div>
+              <?php if (($entry['user_id'] ?? '') === ($viewer['id'] ?? '')): ?>
+                <button class="btn btn-outline-danger btn-sm ms-auto" type="button" data-bs-toggle="modal" data-bs-target="#deleteFeedbackModal" data-feedback-id="<?php echo sanitize($entry['id'] ?? ''); ?>">
+                  Delete
+                </button>
+              <?php endif; ?>
+            </div>
+            <div class="text-muted"><?php echo sanitize($entry['content'] ?? ''); ?></div>
+          </div>
+        <?php endforeach; ?>
+      </div>
+
+      <div class="mt-4">
+        <?php if ($feedbackMessage): ?>
+          <div class="alert alert-success"><?php echo sanitize($feedbackMessage); ?></div>
+        <?php endif; ?>
+        <?php if ($feedbackError): ?>
+          <div class="alert alert-danger"><?php echo sanitize($feedbackError); ?></div>
+        <?php endif; ?>
+        <?php if ($canLeaveFeedback): ?>
+          <form method="post">
+            <div class="mb-3">
+              <label class="form-label">Rating</label>
+              <select class="form-select" name="rating" required>
+                <option value="">Select a rating</option>
+                <option value="5">5 - Excellent</option>
+                <option value="4">4 - Great</option>
+                <option value="3">3 - Good</option>
+                <option value="2">2 - Fair</option>
+                <option value="1">1 - Poor</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Leave feedback</label>
+              <textarea class="form-control" name="feedback" rows="3" placeholder="Share your experience"></textarea>
+              <div class="form-text">Only attendees of this event can post feedback.</div>
+            </div>
+            <button class="btn btn-primary" type="submit" name="submit_feedback" value="1">Post feedback</button>
+          </form>
+        <?php elseif ($existingFeedback): ?>
+          <div class="text-muted small">You already submitted feedback for this event.</div>
+        <?php else: ?>
+          <div class="text-muted small">Feedback is available to attendees after the event.</div>
+        <?php endif; ?>
+      </div>
+    </div>
+  <?php endif; ?>
+</div>
+<?php include __DIR__ . '/../components/footer.php'; ?>
+
+<div class="modal fade" id="deleteFeedbackModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content glass-panel">
+      <div class="modal-header border-0">
+        <h5 class="modal-title">Delete feedback</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post">
+        <div class="modal-body">
+          <p class="mb-2">Delete your feedback? This cannot be undone.</p>
+          <input type="hidden" name="feedback_id" value="" data-feedback-id>
+          <?php if ($selectedEvent): ?>
+            <input type="hidden" name="webinar_id" value="<?php echo sanitize($selectedEvent['id']); ?>">
+          <?php endif; ?>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-outline-danger" name="delete_feedback" value="1">Delete</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

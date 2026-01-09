@@ -1,36 +1,34 @@
 # webIT.
 
-Subscription-based webinar and virtual event management web app built with PHP, Bootstrap 5, and JSON storage.
+Subscription-based webinar and virtual event management web app built with PHP, Bootstrap 5, and MySQL (XAMPP).
 
 ## Requirements
 - PHP 8+
+- MySQL (XAMPP)
 
 ## Run locally
-1. From the project root:
+1. Create a MySQL database (default: `webit`) in XAMPP.
+2. Update database credentials in `config.php` if needed.
+3. From the project root:
    ```bash
    php -S localhost:8000
    ```
-2. Open `http://localhost:8000` in your browser.
+4. Open `http://localhost:8000` in your browser.
 
 ## Entry points
 - Landing page: `/index.php`
-- Sign in: `/login.php`
-- Sign up: `/signup.php`
-- Browse: `/home.php`
-- Dashboard: `/dashboard.php`
-- Create webinar: `/create-webinar.php`
-- Subscription: `/subscription.php`
+- Sign in: `/app/login.php`
+- Sign up: `/app/signup.php`
+- Browse: `/app/home.php`
+- Dashboard: `/app/dashboard.php`
+- Create webinar: `/app/create-webinar.php`
+- Subscription: `/app/subscription.php`
 
 ## Data storage
-All data is stored in `data/` as JSON files:
-- `users.json`
-- `webinars.json`
-- `registrations.json`
-- `payments.json`
-- `subscriptions.json`
-- `notifications.json`
-- `timezones.json`
-- `canceled.json`
+All data is stored in MySQL (XAMPP) using normalized tables. If you previously used the legacy `data_store` table, migrate it with:
+```bash
+php scripts/migrate_data_store.php
+```
 
 ## Uploads
 Uploaded files are organized in:

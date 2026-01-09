@@ -1,0 +1,360 @@
+<?php include __DIR__ . '/../components/header.php'; ?>
+<div class="container py-5 admin-page">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+      <div class="badge-soft mb-2 d-inline-flex align-items-center gap-2">
+        <i class="bi bi-shield-check"></i>
+        Admin workspace
+      </div>
+      <h1 class="h3 fw-bold mb-2">Admin control center</h1>
+      <p class="text-muted mb-0">Manage users, revenue, and operational health in one place.</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-outline-primary" href="/app/host-tools-exports.php"><i class="bi bi-download me-2"></i>Exports</a>
+    </div>
+  </div>
+
+  <?php if ($message): ?>
+    <div class="alert alert-<?php echo sanitize($messageTone); ?> mb-4"><?php echo sanitize($message); ?></div>
+  <?php endif; ?>
+
+  <div class="admin-main">
+      <section class="admin-section" id="overview">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h4 class="fw-bold mb-0">Overview</h4>
+          <span class="text-muted small">Updated just now</span>
+        </div>
+        <div class="row g-3">
+          <div class="col-12 col-md-6 col-xl-3">
+            <div class="glass-panel p-3 h-100 admin-stat">
+              <div class="admin-stat-icon"><i class="bi bi-people"></i></div>
+              <div>
+                <div class="text-muted small">Total users</div>
+                <div class="h5 fw-bold mb-0"><?php echo sanitize((string)$totalUsers); ?></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-md-6 col-xl-3">
+            <div class="glass-panel p-3 h-100 admin-stat">
+              <div class="admin-stat-icon"><i class="bi bi-broadcast"></i></div>
+              <div>
+                <div class="text-muted small">Active webinars</div>
+                <div class="h5 fw-bold mb-0"><?php echo sanitize((string)count($activeWebinars)); ?></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-md-6 col-xl-3">
+            <div class="glass-panel p-3 h-100 admin-stat">
+              <div class="admin-stat-icon"><i class="bi bi-cash-stack"></i></div>
+              <div>
+                <div class="text-muted small">Total revenue</div>
+                <div class="h5 fw-bold mb-0"><?php echo sanitize(admin_format_currency($totalRevenue)); ?></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-md-6 col-xl-3">
+            <div class="glass-panel p-3 h-100 admin-stat">
+              <div class="admin-stat-icon"><i class="bi bi-star"></i></div>
+              <div>
+                <div class="text-muted small">Avg rating</div>
+                <div class="h5 fw-bold mb-0"><?php echo sanitize(number_format($ratingAvg, 1)); ?></div>
+                <div class="text-muted small"><?php echo sanitize((string)count($feedback)); ?> reviews</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-section" id="controls">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+          <h4 class="fw-bold mb-0">Control center</h4>
+          <span class="text-muted small">Changes apply immediately</span>
+        </div>
+        <div class="row g-3 align-items-stretch admin-control-row">
+          <div class="col-12 col-lg-6">
+            <div class="admin-control-card">
+              <div class="fw-semibold mb-2">Broadcast message</div>
+              <form method="post" class="d-grid gap-2">
+                <input type="hidden" name="action" value="broadcast">
+                <div>
+                  <label class="form-label small">Category</label>
+                  <select class="form-select" name="broadcast_category">
+                    <option value="general">General update</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="billing">Billing</option>
+                    <option value="policy">Policy</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="form-label small">Message</label>
+                  <textarea class="form-control" rows="3" name="broadcast_message" placeholder="Short notice sent to all members"></textarea>
+                </div>
+                <button class="btn btn-primary" type="submit"><i class="bi bi-megaphone me-2"></i>Send broadcast</button>
+              </form>
+            </div>
+          </div>
+          <div class="col-12 col-lg-6">
+            <div class="admin-control-card">
+              <div class="fw-semibold mb-2">User role management</div>
+              <form method="post" class="d-grid gap-2">
+                <input type="hidden" name="action" value="update-role">
+                <input type="hidden" name="user_id" data-user-id>
+                <div>
+                  <label class="form-label small">User</label>
+                  <input class="form-control" name="user_lookup" list="userOptions" placeholder="Type a name or email" data-user-lookup>
+                  <datalist id="userOptions">
+                    <?php foreach ($users as $entry): ?>
+                      <?php $label = ($entry['name'] ?? 'User') . ' · ' . ($entry['email'] ?? ''); ?>
+                      <option value="<?php echo sanitize($label); ?>"></option>
+                    <?php endforeach; ?>
+                  </datalist>
+                  <div class="form-text">Start typing and pick from the list to avoid typos.</div>
+                </div>
+                <div>
+                  <label class="form-label small">Role</label>
+                  <select class="form-select" name="role">
+                    <option value="member">Member</option>
+                    <option value="host">Host</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                <button class="btn btn-outline-primary" type="submit"><i class="bi bi-person-check me-2"></i>Update role</button>
+              </form>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="admin-control-card">
+              <div class="fw-semibold mb-2">Webinar status</div>
+              <form method="post" class="row g-2 align-items-end">
+                <input type="hidden" name="action" value="update-webinar">
+                <div class="col-12 col-lg-6">
+                  <label class="form-label small">Webinar</label>
+                  <select class="form-select" name="webinar_id">
+                    <?php foreach ($webinars as $webinar): ?>
+                      <option value="<?php echo sanitize($webinar['id'] ?? ''); ?>">
+                        <?php echo sanitize($webinar['title'] ?? 'Webinar'); ?>
+                      </option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="col-12 col-lg-3">
+                  <label class="form-label small">Status</label>
+                  <select class="form-select" name="status">
+                    <option value="published">Published</option>
+                    <option value="draft">Draft</option>
+                    <option value="canceled">Canceled</option>
+                  </select>
+                </div>
+                <div class="col-12 col-lg-3">
+                  <button class="btn btn-outline-primary w-100" type="submit"><i class="bi bi-toggle-on me-2"></i>Apply</button>
+                </div>
+              </form>
+              <div class="form-text">Canceling a webinar adds it to the canceled ledger.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-section" id="performance">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h4 class="fw-bold mb-0">Webinar performance</h4>
+          <span class="badge-soft">Top events</span>
+        </div>
+        <div class="glass-panel p-4">
+          <div class="table-responsive">
+            <table class="table align-middle">
+              <thead>
+                <tr>
+                  <th>Webinar</th>
+                  <th>Registrations</th>
+                  <th>Waitlist</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php if (!$topWebinars): ?>
+                  <tr>
+                    <td colspan="4" class="text-muted">No webinars available.</td>
+                  </tr>
+                <?php endif; ?>
+                <?php foreach ($topWebinars as $entry): ?>
+                  <?php $webinar = $entry['webinar']; ?>
+                  <tr>
+                    <td>
+                      <div class="fw-semibold"><?php echo sanitize($webinar['title'] ?? 'Webinar'); ?></div>
+                      <div class="text-muted small"><?php echo sanitize($webinar['category'] ?? ''); ?></div>
+                    </td>
+                    <td><?php echo sanitize((string)$entry['registrations']); ?></td>
+                    <td><?php echo sanitize((string)$entry['waitlist']); ?></td>
+                    <td>
+                      <span class="badge-soft"><?php echo sanitize($webinar['status'] ?? 'published'); ?></span>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-section" id="activity">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h4 class="fw-bold mb-0">Recent activity</h4>
+          <span class="text-muted small">Last 6 records</span>
+        </div>
+        <div class="row g-3">
+          <div class="col-12 col-lg-6">
+            <div class="glass-panel p-4 h-100">
+              <div class="fw-semibold mb-3">New signups</div>
+              <?php if (!$recentUsers): ?>
+                <div class="text-muted small">No users found.</div>
+              <?php endif; ?>
+              <?php foreach ($recentUsers as $entry): ?>
+                <div class="d-flex justify-content-between align-items-center border-top py-2">
+                  <div>
+                    <div class="fw-semibold small"><?php echo sanitize($entry['name'] ?? 'User'); ?></div>
+                    <div class="text-muted small"><?php echo sanitize($entry['email'] ?? ''); ?></div>
+                  </div>
+                  <div class="text-muted small"><?php echo sanitize(admin_format_date($entry['created_at'] ?? '')); ?></div>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          </div>
+          <div class="col-12 col-lg-6">
+            <div class="glass-panel p-4 h-100">
+              <div class="fw-semibold mb-3">Latest payments</div>
+              <?php if (!$recentPayments): ?>
+                <div class="text-muted small">No payments yet.</div>
+              <?php endif; ?>
+              <?php foreach ($recentPayments as $payment): ?>
+                <div class="d-flex justify-content-between align-items-center border-top py-2">
+                  <div>
+                    <div class="fw-semibold small"><?php echo sanitize(admin_format_currency((float)($payment['amount'] ?? 0))); ?></div>
+                    <div class="text-muted small"><?php echo sanitize($payment['provider'] ?? ''); ?></div>
+                  </div>
+                  <div class="text-muted small"><?php echo sanitize(admin_format_date($payment['created_at'] ?? '')); ?></div>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-section" id="health">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h4 class="fw-bold mb-0">Platform health</h4>
+          <span class="text-muted small">Operational totals</span>
+        </div>
+        <div class="glass-panel p-4">
+          <div class="row g-3">
+            <div class="col-12 col-md-6">
+              <div class="admin-health">
+                <div class="text-muted small">Active subscriptions</div>
+                <div class="h6 fw-bold mb-0"><?php echo sanitize((string)count($activeSubscriptions)); ?></div>
+              </div>
+            </div>
+            <div class="col-12 col-md-6">
+              <div class="admin-health">
+                <div class="text-muted small">Waitlist entries</div>
+                <div class="h6 fw-bold mb-0"><?php echo sanitize((string)count($waitlist)); ?></div>
+              </div>
+            </div>
+            <div class="col-12 col-md-6">
+              <div class="admin-health">
+                <div class="text-muted small">Payment successes</div>
+                <div class="h6 fw-bold mb-0"><?php echo sanitize((string)$paidCount); ?></div>
+              </div>
+            </div>
+            <div class="col-12 col-md-6">
+              <div class="admin-health">
+                <div class="text-muted small">Payment failures</div>
+                <div class="h6 fw-bold mb-0"><?php echo sanitize((string)$failedCount); ?></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-section" id="feedback">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h4 class="fw-bold mb-0">Feedback watchlist</h4>
+          <span class="badge-soft"><?php echo sanitize((string)count($feedback)); ?> total</span>
+        </div>
+        <div class="row g-3">
+          <div class="col-12 col-lg-8">
+            <div class="glass-panel p-4">
+              <?php if (!$recentFeedback): ?>
+                <div class="text-muted small">No feedback submitted.</div>
+              <?php endif; ?>
+              <?php foreach ($recentFeedback as $entry): ?>
+                <?php $userEntry = $usersById[$entry['user_id'] ?? ''] ?? null; ?>
+                <div class="border rounded-4 p-3 mb-3">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="fw-semibold small"><?php echo sanitize($userEntry['name'] ?? 'Member'); ?></div>
+                    <div class="badge-soft"><?php echo sanitize((string)($entry['rating'] ?? 0)); ?>/5</div>
+                  </div>
+                  <div class="text-muted small"><?php echo sanitize(admin_truncate($entry['content'] ?? '')); ?></div>
+                  <div class="text-muted small mt-2"><?php echo sanitize(admin_format_date($entry['created_at'] ?? '')); ?></div>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          </div>
+          <div class="col-12 col-lg-4">
+            <div class="glass-panel p-4">
+              <div class="fw-semibold mb-2">Canceled events</div>
+              <?php if (!$canceled): ?>
+                <div class="text-muted small">No canceled events.</div>
+              <?php endif; ?>
+              <?php foreach (array_slice($canceled, 0, 5) as $entry): ?>
+                <div class="d-flex justify-content-between align-items-center border-top py-2">
+                  <div class="fw-semibold small"><?php echo sanitize($entry['title'] ?? 'Webinar'); ?></div>
+                  <div class="text-muted small"><?php echo sanitize(admin_format_date($entry['canceled_at'] ?? '')); ?></div>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-section" id="waitlist">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h4 class="fw-bold mb-0">Waitlist pressure</h4>
+          <span class="text-muted small">Highest demand</span>
+        </div>
+        <div class="glass-panel p-4">
+          <?php if (!$waitlistPressure): ?>
+            <div class="text-muted small">No waitlist activity.</div>
+          <?php endif; ?>
+          <?php foreach ($waitlistPressure as $entry): ?>
+            <div class="d-flex justify-content-between align-items-center border-top py-2">
+              <div>
+                <div class="fw-semibold small"><?php echo sanitize($entry['webinar']['title'] ?? 'Webinar'); ?></div>
+                <div class="text-muted small"><?php echo sanitize($entry['webinar']['category'] ?? ''); ?></div>
+              </div>
+              <span class="badge-soft"><?php echo sanitize((string)$entry['count']); ?></span>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      </section>
+  </div>
+</div>
+<script>
+  (function () {
+    const lookupInput = document.querySelector('[data-user-lookup]');
+    const userIdInput = document.querySelector('[data-user-id]');
+    if (!lookupInput || !userIdInput) {
+      return;
+    }
+    const userMap = {
+      <?php foreach ($users as $entry): ?>
+        "<?php echo sanitize(($entry['name'] ?? 'User') . ' · ' . ($entry['email'] ?? '')); ?>": "<?php echo sanitize($entry['id'] ?? ''); ?>",
+      <?php endforeach; ?>
+    };
+    const updateUserId = () => {
+      userIdInput.value = userMap[lookupInput.value] || '';
+    };
+    lookupInput.addEventListener('input', updateUserId);
+    lookupInput.addEventListener('change', updateUserId);
+  })();
+</script>
+<?php include __DIR__ . '/../components/footer.php'; ?>

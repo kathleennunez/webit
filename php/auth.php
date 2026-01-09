@@ -1,8 +1,9 @@
 <?php
 function login_user(string $email, string $password): bool {
   $users = read_json('users.json');
+  $normalized = strtolower(trim($email));
   foreach ($users as $user) {
-    if ($user['email'] === $email && password_verify($password, $user['password_hash'])) {
+    if (strtolower($user['email'] ?? '') === $normalized && password_verify($password, $user['password_hash'])) {
       $_SESSION['user'] = $user;
       return true;
     }

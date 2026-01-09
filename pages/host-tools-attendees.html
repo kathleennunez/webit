@@ -1,0 +1,51 @@
+<?php include __DIR__ . '/../components/header.php'; ?>
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h4 fw-bold">Attendees</h1>
+      <p class="text-muted">View registrations for your webinars.</p>
+    </div>
+    <a class="btn btn-outline-primary" href="/app/dashboard.php"><i class="bi bi-arrow-left me-2"></i>Back</a>
+  </div>
+
+  <div class="glass-panel p-4">
+    <?php if (!$hostedWebinars): ?>
+      <div class="text-muted">Create a webinar to manage attendees.</div>
+    <?php endif; ?>
+    <?php foreach ($hostedWebinars as $webinar): ?>
+      <?php $attendees = $attendeeGroups[$webinar['id']] ?? []; ?>
+      <div class="border rounded-4 p-3 mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="d-flex align-items-center gap-3">
+            <img src="<?php echo sanitize($webinar['image'] ?? '/assets/images/webinar-education.svg'); ?>" class="event-thumb" alt="Event thumbnail">
+            <div>
+              <a class="fw-semibold text-decoration-none text-dark" href="/app/webinar.php?id=<?php echo sanitize($webinar['id']); ?>">
+                <?php echo sanitize($webinar['title']); ?>
+              </a>
+              <?php $capacityInfo = $capacityMap[$webinar['id']] ?? null; ?>
+              <?php if ($capacityInfo && $capacityInfo['total'] > 0): ?>
+                <div class="text-muted small"><?php echo sanitize((string)$capacityInfo['remaining']); ?> seats left of <?php echo sanitize((string)$capacityInfo['total']); ?></div>
+              <?php else: ?>
+                <div class="text-muted small">Unlimited capacity</div>
+              <?php endif; ?>
+            </div>
+          </div>
+          <span class="text-muted small"><?php echo sanitize((string)count($attendees)); ?> attendees</span>
+        </div>
+        <?php if (!$attendees): ?>
+          <div class="text-muted small">No registrations yet.</div>
+        <?php endif; ?>
+        <?php foreach ($attendees as $entry): ?>
+          <div class="d-flex justify-content-between align-items-center border-top py-2">
+            <div>
+              <div class="fw-semibold small"><?php echo sanitize($entry['user']['name'] ?? 'Attendee'); ?></div>
+              <div class="text-muted small"><?php echo sanitize($entry['user']['email'] ?? ''); ?></div>
+            </div>
+            <div class="text-muted small"><?php echo sanitize($entry['registration']['registered_at'] ?? ''); ?></div>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    <?php endforeach; ?>
+  </div>
+</div>
+<?php include __DIR__ . '/../components/footer.php'; ?>

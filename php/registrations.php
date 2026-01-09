@@ -27,6 +27,14 @@ function user_is_registered(string $webinarId, string $userId): bool {
   return false;
 }
 
+function unregister_from_webinar(string $webinarId, string $userId): void {
+  $registrations = read_json('registrations.json');
+  $registrations = array_values(array_filter($registrations, function ($registration) use ($webinarId, $userId) {
+    return ($registration['webinar_id'] ?? '') !== $webinarId || ($registration['user_id'] ?? '') !== $userId;
+  }));
+  write_json('registrations.json', $registrations);
+}
+
 function webinar_registration_count(string $webinarId): int {
   $registrations = read_json('registrations.json');
   return count(array_filter($registrations, fn($r) => $r['webinar_id'] === $webinarId));

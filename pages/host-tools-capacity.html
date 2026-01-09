@@ -1,0 +1,39 @@
+<?php include __DIR__ . '/../components/header.php'; ?>
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h4 fw-bold">Capacity Limits</h1>
+      <p class="text-muted">Set registration limits for each webinar.</p>
+    </div>
+    <a class="btn btn-outline-primary" href="/app/dashboard.php"><i class="bi bi-arrow-left me-2"></i>Back</a>
+  </div>
+
+  <?php if ($message): ?>
+    <div class="alert alert-success"><?php echo sanitize($message); ?></div>
+  <?php endif; ?>
+
+  <div class="glass-panel p-4">
+    <?php if (!$hostedWebinars): ?>
+      <div class="text-muted">No hosted webinars yet.</div>
+    <?php endif; ?>
+    <?php foreach ($hostedWebinars as $webinar): ?>
+      <form method="post" class="d-flex justify-content-between align-items-center border-bottom py-3">
+        <div class="d-flex align-items-center gap-3">
+          <img src="<?php echo sanitize($webinar['image'] ?? '/assets/images/webinar-education.svg'); ?>" class="event-thumb" alt="Event thumbnail">
+          <div>
+            <a class="fw-semibold text-decoration-none text-dark" href="/app/webinar.php?id=<?php echo sanitize($webinar['id']); ?>">
+              <?php echo sanitize($webinar['title']); ?>
+            </a>
+            <div class="text-muted small">Current capacity: <?php echo sanitize((string)($webinar['capacity'] ?? 0)); ?></div>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <input class="form-control form-control-sm" type="number" min="0" name="capacity" value="<?php echo sanitize((string)($webinar['capacity'] ?? 0)); ?>">
+          <input type="hidden" name="webinar_id" value="<?php echo sanitize($webinar['id']); ?>">
+          <button class="btn btn-outline-primary btn-sm" type="submit" name="update_capacity" value="1">Update</button>
+        </div>
+      </form>
+    <?php endforeach; ?>
+  </div>
+</div>
+<?php include __DIR__ . '/../components/footer.php'; ?>

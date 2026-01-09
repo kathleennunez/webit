@@ -63,12 +63,17 @@
           </div>
           <div class="mb-4">
             <label class="form-label">Password</label>
-            <input type="password" name="password" class="form-control" required>
+            <div class="input-group">
+              <input type="password" name="password" class="form-control" data-password-input required>
+              <button class="btn btn-outline-primary password-toggle" type="button" data-password-toggle aria-label="Show password">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
           </div>
           <button class="btn btn-primary w-100" type="submit">Sign In</button>
         </form>
         <div class="mt-4 text-muted small">
-          New here? <a class="text-decoration-none" href="/signup.php">Create an account</a>
+          New here? <a class="text-decoration-none" href="/app/signup.php">Create an account</a>
         </div>
       </div>
     </div>

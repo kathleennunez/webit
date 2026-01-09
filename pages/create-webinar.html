@@ -5,7 +5,7 @@
       <h1 class="h4 fw-bold">Create a webinar</h1>
       <p class="text-muted">Publish a new session for the community.</p>
     </div>
-    <a class="btn btn-outline-primary" href="/dashboard.php"><i class="bi bi-arrow-left me-2"></i>Back</a>
+    <a class="btn btn-outline-primary" href="/app/dashboard.php"><i class="bi bi-arrow-left me-2"></i>Back</a>
   </div>
 
   <?php if ($message): ?>
@@ -17,7 +17,7 @@
 
   <div class="glass-panel p-4">
     <div class="d-flex justify-content-end mb-3">
-      <a class="btn btn-outline-primary btn-sm" href="/drafts.php">View drafts</a>
+      <a class="btn btn-outline-primary btn-sm" href="/app/drafts.php">View drafts</a>
     </div>
     <form method="post" enctype="multipart/form-data">
       <input type="hidden" name="create_webinar" value="1">
@@ -181,8 +181,13 @@
         <input class="form-control" type="file" name="image" accept="image/*" data-image-input>
       </div>
       <div class="mb-3">
-        <label class="form-label">Meeting URL (optional)</label>
-        <input class="form-control" name="meeting_url" value="<?php echo sanitize($formData['meeting_url']); ?>" placeholder="https://zoom.us/j/...">
+        <label class="form-label">Meeting URL</label>
+        <input class="form-control" name="meeting_url" value="<?php echo sanitize($formData['meeting_url']); ?>" placeholder="https://zoom.us/j/..." required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Capacity</label>
+        <input class="form-control" type="number" min="0" name="capacity" value="<?php echo sanitize((string)$formData['capacity']); ?>" placeholder="0">
+        <div class="form-text">Set to 0 for unlimited seats.</div>
       </div>
       <div class="border rounded-4 p-3 mb-3">
         <div class="form-check">
@@ -190,7 +195,7 @@
           <label class="form-check-label fw-semibold" for="premiumCheck">Premium webinar</label>
         </div>
         <?php if (!$hasSubscription): ?>
-          <div class="text-muted small mt-2">Premium webinars require an active subscription. <a href="/subscription.php" class="text-decoration-none">View plans</a>.</div>
+          <div class="text-muted small mt-2">Premium webinars require an active subscription. <a href="/app/subscription.php" class="text-decoration-none">View plans</a>.</div>
         <?php endif; ?>
         <div class="mt-3 <?php echo $formData['premium'] && $hasSubscription ? '' : 'd-none'; ?>" data-premium-price>
           <label class="form-label">Price (USD)</label>

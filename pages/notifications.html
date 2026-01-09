@@ -3,18 +3,19 @@
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
       <h1 class="h4 fw-bold">Notifications</h1>
-      <p class="text-muted">Unread updates from your registrations and subscriptions.</p>
+      <p class="text-muted">Updates from your registrations and subscriptions.</p>
     </div>
   </div>
 
   <div class="glass-panel p-4 notifications-list">
     <div class="d-flex justify-content-end mb-3">
-      <form method="post">
+      <form method="post" class="d-flex gap-2">
         <button class="btn btn-outline-primary btn-sm" type="submit" name="mark_all_read" value="1">Mark all as read</button>
+        <button class="btn btn-outline-danger btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#deleteAllNotificationsModal">Delete all</button>
       </form>
     </div>
     <?php if (!$notifications): ?>
-      <div class="text-muted">No unread notifications.</div>
+      <div class="text-muted">No notifications yet.</div>
     <?php endif; ?>
     <?php foreach ($notifications as $note): ?>
       <?php $webinarId = $note['payload']['meta']['webinar_id'] ?? ''; ?>
@@ -24,11 +25,11 @@
         <div>
           <?php if ($webinarId): ?>
             <?php if ($webinarStatus === 'canceled'): ?>
-              <a class="fw-semibold text-decoration-none text-dark" href="/canceled.php?id=<?php echo sanitize($webinarId); ?>&title=<?php echo urlencode($webinarTitle); ?>">
+              <a class="fw-semibold text-decoration-none text-dark" href="/app/canceled.php?id=<?php echo sanitize($webinarId); ?>&title=<?php echo urlencode($webinarTitle); ?>">
                 <?php echo sanitize($note['payload']['message'] ?? 'Update'); ?>
               </a>
             <?php else: ?>
-              <a class="fw-semibold text-decoration-none text-dark" href="/webinar.php?id=<?php echo sanitize($webinarId); ?>">
+              <a class="fw-semibold text-decoration-none text-dark" href="/app/webinar.php?id=<?php echo sanitize($webinarId); ?>">
                 <?php echo sanitize($note['payload']['message'] ?? 'Update'); ?>
               </a>
             <?php endif; ?>
@@ -42,9 +43,35 @@
             <span class="badge-soft notification-badge">Unread</span>
           <?php endif; ?>
           <div class="text-muted small"><?php echo sanitize($note['created_at']); ?></div>
+          <form method="post" class="mt-2">
+            <input type="hidden" name="notification_id" value="<?php echo sanitize($note['id'] ?? ''); ?>">
+            <button class="btn btn-outline-danger btn-sm" type="submit" name="delete_notification" value="1" aria-label="Delete notification">
+              <i class="bi bi-trash"></i>
+            </button>
+          </form>
         </div>
       </div>
     <?php endforeach; ?>
   </div>
 </div>
 <?php include __DIR__ . '/../components/footer.php'; ?>
+
+<div class="modal fade" id="deleteAllNotificationsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content glass-panel">
+      <div class="modal-header border-0">
+        <h5 class="modal-title">Delete all notifications</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post">
+        <div class="modal-body">
+          <p class="mb-2">Delete all notifications? This cannot be undone.</p>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-outline-danger" name="delete_all" value="1">Delete all</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

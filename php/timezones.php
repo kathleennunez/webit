@@ -49,11 +49,7 @@ function fallback_timezones(): array {
 }
 
 function get_timezones(): array {
-  $cacheFile = timezone_cache_path();
-  $cached = [];
-  if (file_exists($cacheFile)) {
-    $cached = read_json('timezones.json');
-  }
+  $cached = read_json('timezones.json');
   if (!$cached || count($cached) < 10) {
     $timezones = fetch_timezones_from_api();
     if ($timezones) {

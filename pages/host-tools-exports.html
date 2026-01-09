@@ -1,0 +1,40 @@
+<?php include __DIR__ . '/../components/header.php'; ?>
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h4 fw-bold">Data Export</h1>
+      <p class="text-muted">Download CSV reports for your events.</p>
+    </div>
+    <a class="btn btn-outline-primary" href="/app/dashboard.php"><i class="bi bi-arrow-left me-2"></i>Back</a>
+  </div>
+
+  <div class="glass-panel p-4">
+    <?php if (!$publishedWebinars): ?>
+      <div class="text-muted">No published webinars to export.</div>
+    <?php endif; ?>
+    <?php foreach ($publishedWebinars as $webinar): ?>
+      <div class="d-flex justify-content-between align-items-center border-bottom py-3">
+        <div class="d-flex align-items-center gap-3">
+          <img src="<?php echo sanitize($webinar['image'] ?? '/assets/images/webinar-education.svg'); ?>" class="event-thumb" alt="Event thumbnail">
+          <div>
+            <a class="fw-semibold text-decoration-none text-dark" href="/app/webinar.php?id=<?php echo sanitize($webinar['id']); ?>">
+              <?php echo sanitize($webinar['title']); ?>
+            </a>
+            <div class="text-muted small"><?php echo sanitize(format_datetime_for_user($webinar['datetime'] ?? '', $user['timezone'] ?? null)); ?></div>
+          </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          <a class="btn btn-outline-primary btn-sm" href="/app/exports.php?type=attendees&webinar_id=<?php echo sanitize($webinar['id']); ?>">Attendees CSV</a>
+          <a class="btn btn-outline-primary btn-sm" href="/app/exports.php?type=revenue&webinar_id=<?php echo sanitize($webinar['id']); ?>">Revenue CSV</a>
+          <a class="btn btn-outline-primary btn-sm" href="/app/exports.php?type=webinars&webinar_id=<?php echo sanitize($webinar['id']); ?>">Webinar CSV</a>
+        </div>
+      </div>
+    <?php endforeach; ?>
+    <div class="d-flex flex-wrap gap-2 mt-3">
+      <a class="btn btn-outline-primary btn-sm" href="/app/exports.php?type=attendees">Export all attendees CSV</a>
+      <a class="btn btn-outline-primary btn-sm" href="/app/exports.php?type=revenue">Export all revenue CSV</a>
+      <a class="btn btn-outline-primary btn-sm" href="/app/exports.php?type=webinars">Export all webinars CSV</a>
+    </div>
+  </div>
+</div>
+<?php include __DIR__ . '/../components/footer.php'; ?>

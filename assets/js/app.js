@@ -153,7 +153,7 @@ commentForms.forEach((form) => {
           const userId = form.dataset.userId || '';
           const userName = form.dataset.userName || payload.comment.author;
           const userAvatar = form.dataset.userAvatar || '/assets/images/avatar-default.svg';
-          wrapper.innerHTML = `<div class=\"d-flex align-items-center gap-2 small\"><a href=\"/account.php?user_id=${userId}\"><img src=\"${userAvatar}\" class=\"avatar-sm\" alt=\"Comment author\"></a><a class=\"text-decoration-none text-dark fw-semibold\" href=\"/account.php?user_id=${userId}\">${userName}</a><span class=\"text-muted\">• ${payload.comment.created_at}</span></div><div class=\"text-muted small\">${payload.comment.content}</div>`;
+          wrapper.innerHTML = `<div class=\"d-flex align-items-center gap-2 small\"><a href=\"/app/profile.php?user_id=${userId}\"><img src=\"${userAvatar}\" class=\"avatar-sm\" alt=\"Comment author\"></a><a class=\"text-decoration-none text-dark fw-semibold\" href=\"/app/profile.php?user_id=${userId}\">${userName}</a><span class=\"text-muted\">• ${payload.comment.created_at}</span></div><div class=\"text-muted small\">${payload.comment.content}</div>`;
           list.appendChild(wrapper);
           if (emptyState) {
             emptyState.remove();
@@ -257,3 +257,49 @@ if (premiumToggle && premiumPrice) {
   premiumToggle.addEventListener('change', togglePrice);
   togglePrice();
 }
+
+const passwordToggles = document.querySelectorAll('[data-password-toggle]');
+passwordToggles.forEach((toggle) => {
+  toggle.addEventListener('click', () => {
+    const input = toggle.closest('.input-group')?.querySelector('[data-password-input]');
+    if (!input) {
+      return;
+    }
+    const show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    const icon = toggle.querySelector('i');
+    if (icon) {
+      icon.classList.toggle('bi-eye', !show);
+      icon.classList.toggle('bi-eye-slash', show);
+    }
+    toggle.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+  });
+});
+
+const deleteModal = document.querySelector('#deleteWebinarModal');
+if (deleteModal) {
+  deleteModal.addEventListener('show.bs.modal', (event) => {
+    const button = event.relatedTarget;
+    const webinarId = button?.getAttribute('data-webinar-id') || '';
+    const webinarTitle = button?.getAttribute('data-webinar-title') || '';
+    const idInput = deleteModal.querySelector('[data-confirm-id]');
+    const titleEl = deleteModal.querySelector('[data-confirm-title]');
+    if (idInput) {
+      idInput.value = webinarId;
+    }
+    if (titleEl) {
+      titleEl.textContent = webinarTitle;
+    }
+  });
+}
+
+document.querySelectorAll('#deleteFeedbackModal').forEach((modal) => {
+  modal.addEventListener('show.bs.modal', (event) => {
+    const button = event.relatedTarget;
+    const feedbackId = button?.getAttribute('data-feedback-id') || '';
+    const idInput = modal.querySelector('[data-feedback-id]');
+    if (idInput) {
+      idInput.value = feedbackId;
+    }
+  });
+});

@@ -1,10 +1,5 @@
 <?php
-$base = dirname(__DIR__);
-$dataDir = $base . '/data';
-
-function write_json_file(string $path, array $data): void {
-  file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT));
-}
+require_once __DIR__ . '/../php/bootstrap.php';
 
 $categories = [
   'Education','Business','Wellness','Technology','Growth','Marketing','Design','Leadership','Finance','Health','Productivity','Creative'
@@ -55,10 +50,10 @@ foreach ($categories as $cat) {
   }
 }
 
-write_json_file($dataDir . '/users.json', $users);
-write_json_file($dataDir . '/webinars.json', $webinars);
-write_json_file($dataDir . '/registrations.json', []);
-write_json_file($dataDir . '/subscriptions.json', []);
-write_json_file($dataDir . '/attendance.json', []);
-write_json_file($dataDir . '/payments.json', []);
-write_json_file($dataDir . '/notifications.json', []);
+write_json('users.json', $users);
+write_json('webinars.json', $webinars);
+write_json('registrations.json', []);
+write_json('subscriptions.json', []);
+write_json('attendance.json', []);
+write_json('payments.json', []);
+write_json('notifications.json', []);

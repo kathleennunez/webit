@@ -1,7 +1,7 @@
 <?php include __DIR__ . '/../components/header.php'; ?>
 <div class="container py-5">
   <div class="mb-3">
-    <a class="btn btn-outline-primary btn-sm" href="/home.php"><i class="bi bi-arrow-left me-2"></i>Back to Browse</a>
+    <a class="btn btn-outline-primary btn-sm" href="/app/home.php"><i class="bi bi-arrow-left me-2"></i>Back to Browse</a>
   </div>
   <div class="glass-panel p-4 mb-4">
     <img src="<?php echo sanitize($webinar['image'] ?? '/assets/images/webinar-education.svg'); ?>" class="w-100 rounded-4 mb-4" alt="Webinar preview">
@@ -11,14 +11,23 @@
         <h1 class="h3 fw-bold mb-2"><?php echo sanitize($webinar['title']); ?></h1>
         <div class="d-flex align-items-center gap-2 text-muted">
           <img src="<?php echo sanitize(avatar_url($hostUser)); ?>" class="avatar-sm" alt="Host">
-          <a class="text-decoration-none text-muted" href="/account.php?user_id=<?php echo sanitize($hostUser['id'] ?? ''); ?>">
+          <a class="text-decoration-none text-muted" href="/app/profile.php?user_id=<?php echo sanitize($hostUser['id'] ?? ''); ?>">
             Hosted by <?php echo sanitize($webinar['instructor']); ?>
           </a>
         </div>
       </div>
-      <?php if ($webinar['premium'] ?? false): ?>
-        <span class="badge bg-warning text-dark">Premium</span>
-      <?php endif; ?>
+      <div class="d-flex align-items-center gap-2">
+        <form method="post" action="/app/save-webinar.php">
+          <input type="hidden" name="webinar_id" value="<?php echo sanitize($webinar['id']); ?>">
+          <input type="hidden" name="redirect" value="/app/webinar.php?id=<?php echo sanitize($webinar['id']); ?>">
+          <button class="btn btn-light btn-sm save-btn" type="submit" title="<?php echo $isSaved ? 'Unsave' : 'Save'; ?>">
+            <i class="bi bi-bookmark<?php echo $isSaved ? '-fill' : ''; ?>"></i>
+          </button>
+        </form>
+        <?php if ($webinar['premium'] ?? false): ?>
+          <span class="badge bg-warning text-dark">Premium</span>
+        <?php endif; ?>
+      </div>
     </div>
     <?php if ($message): ?>
       <div class="alert alert-success mt-3"><?php echo sanitize($message); ?></div>
@@ -37,6 +46,14 @@
         <p><i class="bi bi-clock me-2"></i><?php echo sanitize($webinar['duration']); ?></p>
       </div>
     </div>
+    <div class="mt-3">
+      <p class="mb-1 text-muted">Capacity</p>
+      <?php if ($capacityRemaining !== null): ?>
+        <p><i class="bi bi-people me-2"></i><?php echo sanitize((string)$capacityRemaining); ?> seats left of <?php echo sanitize((string)$capacity); ?></p>
+      <?php else: ?>
+        <p><i class="bi bi-people me-2"></i>Unlimited seats</p>
+      <?php endif; ?>
+    </div>
     <?php if ($isPremium): ?>
       <div class="mt-3">
         <p class="mb-1 text-muted">Price</p>
@@ -46,7 +63,7 @@
         <?php endif; ?>
       </div>
     <?php endif; ?>
-    <div class="mt-4">
+    <div class="mt-4 d-flex flex-wrap gap-2">
       <?php if ($isPremium && !$hasPaid): ?>
         <button type="button" class="btn btn-primary">Pay with PayPal</button>
       <?php elseif ($canRegister): ?>
@@ -58,18 +75,107 @@
           <?php echo sanitize($registerLabel); ?>
         </button>
       <?php endif; ?>
+      <?php if ($alreadyRegistered && !$isPast): ?>
+        <form method="post">
+          <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#unregisterModal">Unregister</button>
+        </form>
+      <?php endif; ?>
+      <?php if ($alreadyRegistered && !$isPast && !empty($webinar['meeting_url'])): ?>
+        <a class="btn btn-outline-primary" href="<?php echo sanitize($webinar['meeting_url']); ?>" target="_blank" rel="noopener">
+          Join session
+        </a>
+      <?php endif; ?>
+      <?php if ($canWaitlist): ?>
+        <form method="post">
+          <button type="submit" class="btn btn-outline-primary" name="join_waitlist" value="1">Join waitlist</button>
+        </form>
+      <?php elseif ($isWaitlisted): ?>
+        <span class="badge-soft">On waitlist</span>
+      <?php endif; ?>
     </div>
     <?php if ((!$canRegister || $isPremium) && $registerHint): ?>
       <div class="text-muted small mt-2"><?php echo sanitize($registerHint); ?></div>
     <?php endif; ?>
-    <?php if (!empty($webinar['meeting_url'])): ?>
-      <div class="mt-3">
-        <a class="btn btn-outline-primary" href="<?php echo sanitize($webinar['meeting_url']); ?>" target="_blank" rel="noopener">
-          Join session
-        </a>
-      </div>
-    <?php endif; ?>
   </div>
+
+  <?php if ($isPast): ?>
+    <div class="glass-panel p-4">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <h5 class="fw-bold mb-0">Attendee feedback</h5>
+        <?php if ($eventRatingCount > 0): ?>
+          <div class="d-flex align-items-center gap-2">
+            <div class="star-rating small">
+              <?php for ($i = 1; $i <= 5; $i++): ?>
+                <i class="bi <?php echo $eventAverageRating >= $i ? 'bi-star-fill' : 'bi-star'; ?>"></i>
+              <?php endfor; ?>
+            </div>
+            <div class="text-muted small"><?php echo sanitize((string)$eventAverageRating); ?> avg</div>
+          </div>
+        <?php endif; ?>
+      </div>
+      <?php if (!$feedbackEntries): ?>
+        <div class="text-muted small mb-3">No feedback yet.</div>
+      <?php endif; ?>
+      <?php foreach ($feedbackEntries as $entry): ?>
+        <?php $author = $feedbackAuthors[$entry['user_id']] ?? null; ?>
+        <?php $entryRating = (int)($entry['rating'] ?? 0); ?>
+        <div class="border-bottom py-3">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <img src="<?php echo sanitize(avatar_url($author)); ?>" class="avatar-sm" alt="Attendee">
+            <div class="fw-semibold small"><?php echo sanitize($author['name'] ?? 'Attendee'); ?></div>
+            <?php if ($entryRating > 0): ?>
+              <div class="star-rating small">
+                <?php for ($i = 1; $i <= 5; $i++): ?>
+                  <i class="bi <?php echo $entryRating >= $i ? 'bi-star-fill' : 'bi-star'; ?>"></i>
+                <?php endfor; ?>
+              </div>
+            <?php endif; ?>
+            <div class="text-muted small">• <?php echo sanitize($entry['created_at'] ?? ''); ?></div>
+            <?php if (($entry['user_id'] ?? '') === ($user['id'] ?? '')): ?>
+              <button class="btn btn-outline-danger btn-sm ms-auto" type="button" data-bs-toggle="modal" data-bs-target="#deleteFeedbackModal" data-feedback-id="<?php echo sanitize($entry['id'] ?? ''); ?>">
+                Delete
+              </button>
+            <?php endif; ?>
+          </div>
+          <div class="text-muted"><?php echo sanitize($entry['content'] ?? ''); ?></div>
+        </div>
+      <?php endforeach; ?>
+
+      <div class="mt-4" id="feedback-form">
+        <?php if ($feedbackMessage): ?>
+          <div class="alert alert-success"><?php echo sanitize($feedbackMessage); ?></div>
+        <?php endif; ?>
+        <?php if ($feedbackError): ?>
+          <div class="alert alert-danger"><?php echo sanitize($feedbackError); ?></div>
+        <?php endif; ?>
+        <?php if ($canLeaveFeedback): ?>
+          <form method="post">
+            <div class="mb-3">
+              <label class="form-label">Rating</label>
+              <select class="form-select" name="rating" required>
+                <option value="">Select a rating</option>
+                <option value="5">5 - Excellent</option>
+                <option value="4">4 - Great</option>
+                <option value="3">3 - Good</option>
+                <option value="2">2 - Fair</option>
+                <option value="1">1 - Poor</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Leave feedback</label>
+              <textarea class="form-control" name="feedback" rows="3" placeholder="Share your experience"></textarea>
+              <div class="form-text">Only attendees of this event can post feedback.</div>
+            </div>
+            <button class="btn btn-primary" type="submit" name="submit_feedback" value="1">Post feedback</button>
+          </form>
+        <?php elseif ($existingFeedback): ?>
+          <div class="text-muted small">You already submitted feedback for this event.</div>
+        <?php else: ?>
+          <div class="text-muted small">Feedback is available to attendees after the event.</div>
+        <?php endif; ?>
+      </div>
+    </div>
+  <?php endif; ?>
 </div>
 
 <?php if (!$locked && $canRegister): ?>
@@ -112,3 +218,45 @@
   </div>
 <?php endif; ?>
 <?php include __DIR__ . '/../components/footer.php'; ?>
+
+<div class="modal fade" id="unregisterModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content glass-panel">
+      <div class="modal-header border-0">
+        <h5 class="modal-title">Unregister</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post">
+        <div class="modal-body">
+          <p class="mb-0">Unregister from this webinar?</p>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-outline-danger" name="unregister" value="1">Unregister</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="deleteFeedbackModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content glass-panel">
+      <div class="modal-header border-0">
+        <h5 class="modal-title">Delete feedback</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post">
+        <div class="modal-body">
+          <p class="mb-2">Delete your feedback? This cannot be undone.</p>
+          <input type="hidden" name="feedback_id" value="" data-feedback-id>
+          <input type="hidden" name="webinar_id" value="<?php echo sanitize($webinar['id']); ?>">
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-outline-danger" name="delete_feedback" value="1">Delete</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
