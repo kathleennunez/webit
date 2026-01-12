@@ -42,6 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $registrations = array_values(array_filter($registrations, fn($r) => $r['webinar_id'] !== $id));
     write_json('registrations.json', $registrations);
+    $waitlist = read_json('waitlist.json');
+    $waitlist = array_values(array_filter($waitlist, fn($entry) => ($entry['webinar_id'] ?? '') !== $id));
+    write_json('waitlist.json', $waitlist);
     $attendance = read_json('attendance.json');
     $attendance = array_values(array_filter($attendance, fn($a) => $a['webinar_id'] !== $id));
     write_json('attendance.json', $attendance);

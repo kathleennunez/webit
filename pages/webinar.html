@@ -65,7 +65,7 @@
     <?php endif; ?>
     <div class="mt-4 d-flex flex-wrap gap-2">
       <?php if ($isPremium && !$hasPaid): ?>
-        <button type="button" class="btn btn-primary">Pay with PayPal</button>
+        <div id="paypal-webinar"></div>
       <?php elseif ($canRegister): ?>
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#registerModal">
           <?php echo sanitize($registerLabel); ?>
@@ -217,8 +217,6 @@
     </div>
   </div>
 <?php endif; ?>
-<?php include __DIR__ . '/../components/footer.php'; ?>
-
 <div class="modal fade" id="unregisterModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content glass-panel">
@@ -260,3 +258,37 @@
     </div>
   </div>
 </div>
+<?php if ($isPremium && !$hasPaid): ?>
+  <script src="https://www.paypal.com/sdk/js?client-id=ASgxSnVSTChD-eH50pPb0rSOEHa75UDmQqfGHxXQ17CjJNX6E5GUCQ8UFCbcYcC4yffwTVCG_R5GkcI7&currency=USD"></script>
+  <script>
+    if (window.paypal) {
+      window.paypal.Buttons({
+        createOrder: (data, actions) => actions.order.create({
+          purchase_units: [{
+            amount: { value: '<?php echo sanitize(number_format((float)$price, 2, '.', '')); ?>' }
+          }]
+        }),
+        onApprove: (data, actions) => actions.order.capture().then(() => {
+          return fetch('/paypal-integration/app/paypal/webinar-payment.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              webinar_id: '<?php echo sanitize($id); ?>',
+              amount: <?php echo sanitize(number_format((float)$price, 2, '.', '')); ?>
+            })
+          }).then(() => {
+            window.location.reload();
+          });
+        })
+      }).render('#paypal-webinar');
+    }
+  </script>
+<?php endif; ?>
+</main>
+  <?php if (current_user()): ?>
+    </div>
+  <?php endif; ?>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/assets/js/app.js"></script>
+</body>
+</html>

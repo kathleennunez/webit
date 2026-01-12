@@ -105,6 +105,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['unregister']) && !$lo
     unregister_from_webinar($id, $user['id']);
     $message = 'You have been unregistered from this webinar.';
     $alreadyRegistered = false;
+    $capacityRemaining = $capacity > 0 ? max(0, $capacity - webinar_registration_count($id)) : null;
+    $capacityFull = $capacity > 0 && $capacityRemaining === 0;
+    if ($capacity > 0 && $capacityRemaining > 0) {
+      notify_waitlist_openings($id, $capacityRemaining, 'unregister');
+    }
     $canRegister = !$isPast && $isPublished && !$capacityFull && !$conflictWebinar;
     $registerLabel = 'Register Now';
     $registerHint = '';

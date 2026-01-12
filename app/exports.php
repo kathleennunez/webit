@@ -13,7 +13,7 @@ foreach ($hostedWebinars as $webinar) {
   $webinarMap[$webinar['id']] = $webinar;
 }
 
-if (!$type || !in_array($type, ['attendees', 'revenue', 'webinars'], true)) {
+if (!$type || !in_array($type, ['attendees', 'revenue', 'webinars', 'waitlist'], true)) {
   http_response_code(400);
   echo 'Invalid export type';
   exit;
@@ -56,6 +56,33 @@ if ($type === 'attendees') {
       $attendee['name'] ?? '',
       $attendee['email'] ?? '',
       $registration['registered_at'] ?? ''
+    ]);
+  }
+}
+
+if ($type === 'waitlist') {
+  fputcsv($output, ['webinar_id', 'webinar_title', 'attendee_name', 'attendee_email', 'waitlisted_at']);
+  $waitlist = read_json('waitlist.json');
+  $users = read_json('users.json');
+  $userMap = [];
+  foreach ($users as $entry) {
+    $userMap[$entry['id']] = $entry;
+  }
+  foreach ($waitlist as $entry) {
+    $webinarId = $entry['webinar_id'] ?? '';
+    if (!isset($webinarMap[$webinarId])) {
+      continue;
+    }
+    if ($webinarIdFilter && $webinarId !== $webinarIdFilter) {
+      continue;
+    }
+    $attendee = $userMap[$entry['user_id']] ?? [];
+    fputcsv($output, [
+      $webinarId,
+      $webinarMap[$webinarId]['title'] ?? '',
+      $attendee['name'] ?? '',
+      $attendee['email'] ?? '',
+      $entry['created_at'] ?? ''
     ]);
   }
 }

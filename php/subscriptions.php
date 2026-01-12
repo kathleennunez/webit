@@ -11,13 +11,15 @@ function get_subscription(string $userId): ?array {
 
 function create_subscription(string $userId, string $plan, string $source = 'paypal'): array {
   $subs = read_json('subscriptions.json');
+  $planKey = strtolower(trim($plan));
+  $renewalBase = $planKey === 'yearly' || $planKey === 'annual' ? '+1 year' : '+1 month';
   $new = [
     'id' => uniqid('sub_', true),
     'user_id' => $userId,
     'plan' => $plan,
     'status' => 'active',
     'created_at' => date('c'),
-    'renewal_at' => date('c', strtotime('+1 month')),
+    'renewal_at' => date('c', strtotime($renewalBase)),
     'provider' => $source
   ];
   $subs[] = $new;

@@ -30,6 +30,49 @@ function admin_truncate(string $value, int $limit = 80): string {
   return substr($value, 0, $limit - 3) . '...';
 }
 
+function admin_filter_month(array $items, string $dateKey, string $month): array {
+  if (!$month) {
+    return $items;
+  }
+  return array_values(array_filter($items, function ($item) use ($dateKey, $month) {
+    $value = $item[$dateKey] ?? '';
+    if (!$value) {
+      return false;
+    }
+    $ts = strtotime($value);
+    if ($ts === false) {
+      return false;
+    }
+    return date('Y-m', $ts) === $month;
+  }));
+}
+
+function admin_paginate(array $items, int $page, int $perPage): array {
+  $total = count($items);
+  $totalPages = max(1, (int)ceil($total / $perPage));
+  $page = max(1, min($page, $totalPages));
+  $offset = ($page - 1) * $perPage;
+  return [
+    'items' => array_slice($items, $offset, $perPage),
+    'page' => $page,
+    'total_pages' => $totalPages,
+    'total' => $total
+  ];
+}
+
+function admin_query_link(array $overrides): string {
+  $params = $_GET;
+  foreach ($overrides as $key => $value) {
+    if ($value === null) {
+      unset($params[$key]);
+    } else {
+      $params[$key] = $value;
+    }
+  }
+  $query = http_build_query($params);
+  return $query ? ('?' . $query) : '';
+}
+
 $users = read_json('users.json');
 $webinars = all_webinars();
 $registrations = read_json('registrations.json');
@@ -61,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if ($action === 'update-role') {
     $targetId = $_POST['user_id'] ?? '';
     $role = $_POST['role'] ?? 'member';
-    $allowed = ['admin', 'host', 'member'];
+    $allowed = ['admin', 'member'];
     if (!$targetId || !in_array($role, $allowed, true)) {
       $message = 'Select a user and valid role.';
       $messageTone = 'warning';
@@ -107,6 +150,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $canceled = read_json('canceled.json');
 }
 
+$monthFilter = '';
+if (!empty($_GET['month']) && preg_match('/^\\d{4}-\\d{2}$/', $_GET['month'])) {
+  $monthFilter = $_GET['month'];
+}
+
 $usersById = [];
 foreach ($users as $entry) {
   if (!empty($entry['id'])) {
@@ -121,8 +169,16 @@ foreach ($webinars as $webinar) {
   }
 }
 
+$filteredUsers = admin_filter_month($users, 'created_at', $monthFilter);
+$filteredWebinars = admin_filter_month($webinars, 'datetime', $monthFilter);
+$filteredRegistrations = admin_filter_month($registrations, 'registered_at', $monthFilter);
+$filteredPayments = admin_filter_month($payments, 'created_at', $monthFilter);
+$filteredFeedback = admin_filter_month($feedback, 'created_at', $monthFilter);
+$filteredWaitlist = admin_filter_month($waitlist, 'created_at', $monthFilter);
+$filteredCanceled = admin_filter_month($canceled, 'canceled_at', $monthFilter);
+
 $registrationCounts = [];
-foreach ($registrations as $registration) {
+foreach ($filteredRegistrations as $registration) {
   $id = $registration['webinar_id'] ?? '';
   if (!$id) {
     continue;
@@ -131,7 +187,7 @@ foreach ($registrations as $registration) {
 }
 
 $waitlistCounts = [];
-foreach ($waitlist as $entry) {
+foreach ($filteredWaitlist as $entry) {
   $id = $entry['webinar_id'] ?? '';
   if (!$id) {
     continue;
@@ -163,23 +219,23 @@ $ratingAvg = $feedback ? $ratingTotal / count($feedback) : 0;
 
 $activeSubscriptions = array_values(array_filter($subscriptions, fn($s) => ($s['status'] ?? '') === 'active'));
 
-usort($users, function ($a, $b) {
+usort($filteredUsers, function ($a, $b) {
   return strtotime($b['created_at'] ?? '') <=> strtotime($a['created_at'] ?? '');
 });
-$recentUsers = array_slice($users, 0, 6);
+$usersPage = admin_paginate($filteredUsers, (int)($_GET['page_users'] ?? 1), 10);
 
-usort($payments, function ($a, $b) {
+usort($filteredPayments, function ($a, $b) {
   return strtotime($b['created_at'] ?? '') <=> strtotime($a['created_at'] ?? '');
 });
-$recentPayments = array_slice($payments, 0, 6);
+$paymentsPage = admin_paginate($filteredPayments, (int)($_GET['page_payments'] ?? 1), 10);
 
-usort($feedback, function ($a, $b) {
+usort($filteredFeedback, function ($a, $b) {
   return strtotime($b['created_at'] ?? '') <=> strtotime($a['created_at'] ?? '');
 });
-$recentFeedback = array_slice($feedback, 0, 5);
+$feedbackPage = admin_paginate($filteredFeedback, (int)($_GET['page_feedback'] ?? 1), 8);
 
 $webinarMetrics = [];
-foreach ($webinars as $webinar) {
+foreach ($filteredWebinars as $webinar) {
   $id = $webinar['id'] ?? '';
   if (!$id) {
     continue;
@@ -196,7 +252,7 @@ usort($webinarMetrics, function ($a, $b) {
   }
   return $b['registrations'] <=> $a['registrations'];
 });
-$topWebinars = array_slice($webinarMetrics, 0, 6);
+$webinarsPage = admin_paginate($webinarMetrics, (int)($_GET['page_webinars'] ?? 1), 10);
 
 $waitlistPressure = [];
 foreach ($waitlistCounts as $webinarId => $count) {
@@ -206,6 +262,109 @@ foreach ($waitlistCounts as $webinarId => $count) {
   ];
 }
 usort($waitlistPressure, fn($a, $b) => $b['count'] <=> $a['count']);
-$waitlistPressure = array_slice($waitlistPressure, 0, 5);
+$waitlistPage = admin_paginate($waitlistPressure, (int)($_GET['page_waitlist'] ?? 1), 10);
+
+usort($filteredRegistrations, function ($a, $b) {
+  return strtotime($b['registered_at'] ?? '') <=> strtotime($a['registered_at'] ?? '');
+});
+$registrationsPage = admin_paginate($filteredRegistrations, (int)($_GET['page_attendees'] ?? 1), 10);
+
+usort($filteredCanceled, function ($a, $b) {
+  return strtotime($b['canceled_at'] ?? '') <=> strtotime($a['canceled_at'] ?? '');
+});
+$canceledPage = admin_paginate($filteredCanceled, (int)($_GET['page_canceled'] ?? 1), 8);
+
+$export = $_GET['export'] ?? '';
+if ($export) {
+  $filename = 'admin-export-' . $export . ($monthFilter ? ('-' . $monthFilter) : '') . '.csv';
+  header('Content-Type: text/csv');
+  header('Content-Disposition: attachment; filename="' . $filename . '"');
+  $output = fopen('php://output', 'w');
+  if ($export === 'users') {
+    fputcsv($output, ['id', 'name', 'email', 'role', 'created_at']);
+    foreach ($filteredUsers as $entry) {
+      fputcsv($output, [
+        $entry['id'] ?? '',
+        $entry['name'] ?? '',
+        $entry['email'] ?? '',
+        $entry['role'] ?? '',
+        $entry['created_at'] ?? ''
+      ]);
+    }
+  } elseif ($export === 'webinars') {
+    fputcsv($output, ['id', 'title', 'datetime', 'status', 'premium', 'price', 'capacity', 'registrations', 'waitlist']);
+    foreach ($webinarMetrics as $entry) {
+      $webinar = $entry['webinar'] ?? [];
+      fputcsv($output, [
+        $webinar['id'] ?? '',
+        $webinar['title'] ?? '',
+        $webinar['datetime'] ?? '',
+        $webinar['status'] ?? '',
+        !empty($webinar['premium']) ? 'yes' : 'no',
+        $webinar['price'] ?? 0,
+        $webinar['capacity'] ?? 0,
+        $entry['registrations'] ?? 0,
+        $entry['waitlist'] ?? 0
+      ]);
+    }
+  } elseif ($export === 'payments') {
+    fputcsv($output, ['id', 'user_id', 'webinar_id', 'amount', 'provider', 'status', 'created_at']);
+    foreach ($filteredPayments as $payment) {
+      fputcsv($output, [
+        $payment['id'] ?? '',
+        $payment['user_id'] ?? '',
+        $payment['webinar_id'] ?? '',
+        $payment['amount'] ?? 0,
+        $payment['provider'] ?? '',
+        $payment['status'] ?? '',
+        $payment['created_at'] ?? ''
+      ]);
+    }
+  } elseif ($export === 'feedback') {
+    fputcsv($output, ['id', 'user_id', 'webinar_id', 'rating', 'content', 'created_at']);
+    foreach ($filteredFeedback as $entry) {
+      fputcsv($output, [
+        $entry['id'] ?? '',
+        $entry['user_id'] ?? '',
+        $entry['webinar_id'] ?? '',
+        $entry['rating'] ?? 0,
+        $entry['content'] ?? '',
+        $entry['created_at'] ?? ''
+      ]);
+    }
+  } elseif ($export === 'waitlist') {
+    fputcsv($output, ['id', 'webinar_id', 'user_id', 'created_at']);
+    foreach ($filteredWaitlist as $entry) {
+      fputcsv($output, [
+        $entry['id'] ?? '',
+        $entry['webinar_id'] ?? '',
+        $entry['user_id'] ?? '',
+        $entry['created_at'] ?? ''
+      ]);
+    }
+  } elseif ($export === 'attendees') {
+    fputcsv($output, ['id', 'webinar_id', 'user_id', 'registered_at', 'status']);
+    foreach ($filteredRegistrations as $entry) {
+      fputcsv($output, [
+        $entry['id'] ?? '',
+        $entry['webinar_id'] ?? '',
+        $entry['user_id'] ?? '',
+        $entry['registered_at'] ?? '',
+        $entry['status'] ?? ''
+      ]);
+    }
+  } elseif ($export === 'canceled') {
+    fputcsv($output, ['id', 'title', 'canceled_at']);
+    foreach ($filteredCanceled as $entry) {
+      fputcsv($output, [
+        $entry['id'] ?? '',
+        $entry['title'] ?? '',
+        $entry['canceled_at'] ?? ''
+      ]);
+    }
+  }
+  fclose($output);
+  exit;
+}
 
 include __DIR__ . '/../pages/admin.html';

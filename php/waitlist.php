@@ -34,3 +34,33 @@ function add_waitlist_entry(string $webinarId, string $userId): void {
   ];
   write_json('waitlist.json', $waitlist);
 }
+
+function notify_waitlist_openings(string $webinarId, int $availableSeats, string $reason = ''): int {
+  if ($availableSeats <= 0 || !$webinarId) {
+    return 0;
+  }
+  $waitlist = waitlist_for_webinar($webinarId);
+  if (!$waitlist) {
+    return 0;
+  }
+  usort($waitlist, function ($a, $b) {
+    return strtotime($a['created_at'] ?? '') <=> strtotime($b['created_at'] ?? '');
+  });
+  $webinar = get_webinar($webinarId);
+  $title = $webinar['title'] ?? 'webinar';
+  $notified = 0;
+  foreach (array_slice($waitlist, 0, $availableSeats) as $entry) {
+    $userId = $entry['user_id'] ?? '';
+    if (!$userId) {
+      continue;
+    }
+    notify_user(
+      $userId,
+      'A spot just opened for "' . $title . '". Complete your registration while seats last.',
+      'waitlist',
+      ['webinar_id' => $webinarId, 'reason' => $reason]
+    );
+    $notified++;
+  }
+  return $notified;
+}

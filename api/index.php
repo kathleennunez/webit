@@ -49,7 +49,12 @@ switch ($resource) {
     if ($method === 'POST') {
       $sub = create_subscription($user['id'], $payload['plan'] ?? 'monthly');
       send_email($user['email'], 'Subscription Activated', 'email_subscription.html', $sub);
-      notify_user($user['id'], 'Subscription activated: ' . ($payload['plan'] ?? 'monthly'), 'subscription', ['plan' => $payload['plan'] ?? 'monthly']);
+      notify_user(
+        $user['id'],
+        'Subscription payment received for the ' . ($payload['plan'] ?? 'monthly') . ' plan.',
+        'subscription',
+        ['plan' => $payload['plan'] ?? 'monthly']
+      );
       json_response($sub, 201);
     }
     break;
@@ -72,6 +77,18 @@ switch ($resource) {
   case 'payments':
     if ($method === 'POST') {
       $record = log_payment($payload, $user['id']);
+      $webinarId = $record['webinar_id'] ?? '';
+      if ($webinarId) {
+        $webinar = get_webinar($webinarId);
+        $amount = (float)($record['amount'] ?? 0);
+        $formatted = '$' . number_format($amount, 2);
+        notify_user(
+          $user['id'],
+          'Payment received for premium webinar "' . ($webinar['title'] ?? 'Webinar') . '" (' . $formatted . ').',
+          'payment',
+          ['webinar_id' => $webinarId]
+        );
+      }
       json_response($record, 201);
     }
     json_response(read_json('payments.json'));

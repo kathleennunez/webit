@@ -708,6 +708,16 @@ body {
   border: 1px solid rgba(136, 156, 245, 0.2);
 }
 
+[data-theme="dark"] .landing-highlight {
+  background: rgba(29, 34, 49, 0.85);
+  border-color: rgba(136, 156, 245, 0.35);
+  color: var(--text);
+}
+
+[data-theme="dark"] .landing-highlight .text-muted {
+  color: #cfd6ea;
+}
+
 .landing-live {
   font-size: 0.85rem;
 }
@@ -903,6 +913,15 @@ body {
   background: var(--bg-elevated);
   color: var(--text);
   transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.form-control::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+[data-theme="dark"] .form-control::placeholder {
+  color: #cfd6ea;
 }
 
 .form-control:focus,
