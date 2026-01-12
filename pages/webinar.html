@@ -3,6 +3,12 @@
   <div class="mb-3">
     <a class="btn btn-outline-primary btn-sm" href="/app/home.php"><i class="bi bi-arrow-left me-2"></i>Back to Browse</a>
   </div>
+  <?php if (!empty($paymentNotice)): ?>
+    <div class="alert alert-success d-flex justify-content-between align-items-center gap-2">
+      <div>Payment received. You now have access to this webinar.</div>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <?php endif; ?>
   <div class="glass-panel p-4 mb-4">
     <img src="<?php echo sanitize($webinar['image'] ?? '/assets/images/webinar-education.svg'); ?>" class="w-100 rounded-4 mb-4" alt="Webinar preview">
     <div class="d-flex justify-content-between align-items-start">
@@ -259,28 +265,33 @@
   </div>
 </div>
 <?php if ($isPremium && !$hasPaid): ?>
-  <script src="https://www.paypal.com/sdk/js?client-id=ASgxSnVSTChD-eH50pPb0rSOEHa75UDmQqfGHxXQ17CjJNX6E5GUCQ8UFCbcYcC4yffwTVCG_R5GkcI7&currency=USD"></script>
+  <?php if (!empty($paypalClientId)): ?>
+    <script src="https://www.paypal.com/sdk/js?client-id=<?php echo sanitize($paypalClientId); ?>&currency=USD"></script>
+  <?php endif; ?>
   <script>
     if (window.paypal) {
       window.paypal.Buttons({
-        createOrder: (data, actions) => actions.order.create({
-          purchase_units: [{
-            amount: { value: '<?php echo sanitize(number_format((float)$price, 2, '.', '')); ?>' }
-          }]
-        }),
-        onApprove: (data, actions) => actions.order.capture().then(() => {
-          return fetch('/paypal-integration/app/paypal/webinar-payment.php', {
+        createOrder: () => fetch('/paypal-integration/create-order.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'webinar', webinar_id: '<?php echo sanitize($id); ?>' })
+        }).then((res) => res.json()).then((data) => data.id),
+        onApprove: (data) => {
+          return fetch('/paypal-integration/capture-order.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              webinar_id: '<?php echo sanitize($id); ?>',
-              amount: <?php echo sanitize(number_format((float)$price, 2, '.', '')); ?>
-            })
-          }).then(() => {
-            window.location.reload();
+            body: JSON.stringify({ order_id: data.orderID, type: 'webinar' })
+          }).then((res) => res.json()).then((payload) => {
+            if (!payload || payload.error) {
+              alert(payload?.error || 'Payment failed. Please try again.');
+              return;
+            }
+            window.location = '/app/webinar.php?id=<?php echo sanitize($id); ?>&paid=1';
           });
-        })
+        }
       }).render('#paypal-webinar');
+    } else {
+      console.warn('PayPal SDK missing or client id not configured.');
     }
   </script>
 <?php endif; ?>

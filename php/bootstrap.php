@@ -15,7 +15,6 @@ require_once BASE_PATH . '/php/notifications.php';
 require_once BASE_PATH . '/php/saved.php';
 require_once BASE_PATH . '/php/waitlist.php';
 require_once BASE_PATH . '/php/feedback.php';
-require_once BASE_PATH . '/php/ai.php';
 require_once BASE_PATH . '/php/reports.php';
 require_once BASE_PATH . '/php/payments.php';
 require_once BASE_PATH . '/php/timezones.php';

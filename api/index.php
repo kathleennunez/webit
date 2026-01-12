@@ -93,11 +93,6 @@ switch ($resource) {
     }
     json_response(read_json('payments.json'));
     break;
-  case 'ai/recommendations':
-    if ($method === 'GET') {
-      json_response(recommend_webinars($user['id']));
-    }
-    break;
   default:
     json_response(['error' => 'Unknown endpoint'], 404);
 }

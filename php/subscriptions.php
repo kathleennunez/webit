@@ -1,12 +1,16 @@
 <?php
 function get_subscription(string $userId): ?array {
   $subs = read_json('subscriptions.json');
+  $latest = null;
   foreach ($subs as $sub) {
     if ($sub['user_id'] === $userId) {
-      return $sub;
+      $latest = $sub;
+      if (($sub['status'] ?? '') === 'active') {
+        return $sub;
+      }
     }
   }
-  return null;
+  return $latest;
 }
 
 function create_subscription(string $userId, string $plan, string $source = 'paypal'): array {

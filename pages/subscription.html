@@ -8,6 +8,12 @@
   </div>
 
   <div class="glass-panel p-4">
+    <?php if (!empty($paymentNotice)): ?>
+      <div class="alert alert-success d-flex justify-content-between align-items-center gap-2">
+        <div>Payment received. Your subscription is now active.</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    <?php endif; ?>
     <?php if (!empty($subscription) && ($subscription['status'] ?? '') === 'active'): ?>
       <div class="alert alert-success d-flex flex-wrap justify-content-between align-items-center gap-2">
         <div>
@@ -58,27 +64,36 @@
   </div>
 </div>
 <?php if (empty($subscription) || ($subscription['status'] ?? '') !== 'active'): ?>
-  <script src="https://www.paypal.com/sdk/js?client-id=ASgxSnVSTChD-eH50pPb0rSOEHa75UDmQqfGHxXQ17CjJNX6E5GUCQ8UFCbcYcC4yffwTVCG_R5GkcI7&currency=USD"></script>
+  <?php if (!empty($paypalClientId)): ?>
+    <script src="https://www.paypal.com/sdk/js?client-id=<?php echo sanitize($paypalClientId); ?>&currency=USD"></script>
+  <?php endif; ?>
   <script>
+    if (!window.paypal) {
+      console.warn('PayPal SDK missing or client id not configured.');
+    }
     const renderSubscription = (containerId, amount, plan) => {
       if (!window.paypal) {
         return;
       }
       window.paypal.Buttons({
-        createOrder: (data, actions) => actions.order.create({
-          purchase_units: [{
-            amount: { value: amount }
-          }]
-        }),
-        onApprove: (data, actions) => actions.order.capture().then(() => {
-          return fetch('/paypal-integration/app/paypal/subscribe.php', {
+        createOrder: () => fetch('/paypal-integration/create-order.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'subscription', plan })
+        }).then((res) => res.json()).then((data) => data.id),
+        onApprove: (data) => {
+          return fetch('/paypal-integration/capture-order.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ plan })
-          }).then(() => {
-            window.location = '/app/dashboard.php';
+            body: JSON.stringify({ order_id: data.orderID, type: 'subscription' })
+          }).then((res) => res.json()).then((payload) => {
+            if (!payload || payload.error) {
+              alert(payload?.error || 'Payment failed. Please try again.');
+              return;
+            }
+            window.location = '/app/subscription.php?paid=1';
           });
-        })
+        }
       }).render(containerId);
     };
 

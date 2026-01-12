@@ -22,7 +22,6 @@ if ($selectedCategory !== 'all') {
 $shuffled = $webinars;
 shuffle($shuffled);
 $webinars = $shuffled;
-$recommended = recommend_webinars($user['id']);
 $selectedCategory = strtolower($selectedCategory);
 
 include __DIR__ . '/../pages/home.html';

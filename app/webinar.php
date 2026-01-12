@@ -37,6 +37,8 @@ $capacityFull = $capacity > 0 && webinar_registration_count($id) >= $capacity;
 $capacityRemaining = $capacity > 0 ? max(0, $capacity - webinar_registration_count($id)) : null;
 $canRegister = !$locked && $hasPaid && !$alreadyRegistered && !$conflictWebinar && !$isPast && $isPublished && !$capacityFull;
 $isWaitlisted = is_user_waitlisted($id, $user['id']);
+$paypalClientId = $appConfig['paypal_client_id'] ?? '';
+$paymentNotice = !empty($_GET['paid']);
 $canWaitlist = !$locked && !$alreadyRegistered && !$isPast && $isPublished && $capacityFull && !$isWaitlisted
   && ($webinar['host_id'] ?? '') !== $user['id'];
 $isSaved = is_webinar_saved($user['id'], $id);

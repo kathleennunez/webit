@@ -26,10 +26,7 @@ Subscription-based webinar and virtual event management web app built with PHP, 
 - Subscription: `/app/subscription.php`
 
 ## Data storage
-All data is stored in MySQL (XAMPP) using normalized tables. If you previously used the legacy `data_store` table, migrate it with:
-```bash
-php scripts/migrate_data_store.php
-```
+All data is stored in MySQL (XAMPP) using normalized tables.
 
 ## Uploads
 Uploaded files are organized in:
@@ -41,16 +38,6 @@ Uploaded files are organized in:
 - Premium webinars can set a custom USD price.
 - Registration requires payment (PayPal button is UI-only by default).
 
-## Seed data (optional)
-To generate sample users and webinars:
-```bash
-php scripts/seed_data.php
-```
-
 ## Admin access
 - Admin accounts are restricted to the admin center and do not see user/host features.
 - Promote a user by setting `users.role = 'admin'` in MySQL.
-
-## Notes
-- Dark/light mode toggle is stored in `localStorage`.
-- The notification dropdown shows the latest unread updates.

@@ -24,7 +24,6 @@ function create_webinar(array $payload, string $hostId): array {
     'instructor' => $payload['instructor'] ?? 'Host',
     'premium' => (bool)($payload['premium'] ?? false),
     'price' => isset($payload['price']) ? (float)$payload['price'] : 0,
-    'materials' => $payload['materials'] ?? [],
     'host_id' => $hostId,
     'capacity' => (int)($payload['capacity'] ?? 100),
     'popularity' => (int)($payload['popularity'] ?? 0),

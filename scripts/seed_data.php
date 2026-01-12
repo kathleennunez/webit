@@ -38,7 +38,6 @@ foreach ($categories as $cat) {
       'category' => $cat,
       'instructor' => $users[$hostIndex]['name'],
       'premium' => ($index % 3 === 0),
-      'materials' => ['Slides','Workbook','Recording'],
       'host_id' => $users[$hostIndex]['id'],
       'capacity' => 150 + ($index % 6) * 25,
       'popularity' => $index % 10,

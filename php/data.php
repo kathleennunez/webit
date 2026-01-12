@@ -40,7 +40,6 @@ function ensure_tables(): void {
     instructor VARCHAR(255) NULL,
     premium TINYINT(1) DEFAULT 0,
     price DECIMAL(10,2) DEFAULT 0,
-    materials JSON NULL,
     host_id VARCHAR(64) NOT NULL,
     capacity INT DEFAULT 0,
     popularity INT DEFAULT 0,
@@ -160,7 +159,6 @@ function read_json(string $file): array {
     case 'webinars':
       $rows = $pdo->query('SELECT * FROM webinars ORDER BY created_at ASC')->fetchAll();
       return array_map(function ($row) {
-        $row['materials'] = $row['materials'] ? json_decode($row['materials'], true) : [];
         $row['premium'] = (bool)($row['premium'] ?? 0);
         $row['price'] = (float)($row['price'] ?? 0);
         $row['capacity'] = (int)($row['capacity'] ?? 0);
@@ -284,7 +282,7 @@ function write_json(string $file, array $data): void {
       break;
     case 'webinars':
       $pdo->exec('DELETE FROM webinars');
-      $stmt = $pdo->prepare('INSERT INTO webinars (id, title, description, datetime, duration, category, instructor, premium, price, materials, host_id, capacity, popularity, image, meeting_url, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+      $stmt = $pdo->prepare('INSERT INTO webinars (id, title, description, datetime, duration, category, instructor, premium, price, host_id, capacity, popularity, image, meeting_url, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
       foreach ($data as $webinar) {
         $stmt->execute([
           $webinar['id'] ?? '',
@@ -296,7 +294,6 @@ function write_json(string $file, array $data): void {
           $webinar['instructor'] ?? null,
           !empty($webinar['premium']) ? 1 : 0,
           $webinar['price'] ?? 0,
-          json_encode($webinar['materials'] ?? [], JSON_UNESCAPED_SLASHES),
           $webinar['host_id'] ?? '',
           (int)($webinar['capacity'] ?? 0),
           (int)($webinar['popularity'] ?? 0),
@@ -462,7 +459,7 @@ function append_json(string $file, array $item): void {
       ]);
       break;
     case 'webinars':
-      $stmt = $pdo->prepare('INSERT INTO webinars (id, title, description, datetime, duration, category, instructor, premium, price, materials, host_id, capacity, popularity, image, meeting_url, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+      $stmt = $pdo->prepare('INSERT INTO webinars (id, title, description, datetime, duration, category, instructor, premium, price, host_id, capacity, popularity, image, meeting_url, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
       $stmt->execute([
         $item['id'] ?? '',
         $item['title'] ?? '',
@@ -473,7 +470,6 @@ function append_json(string $file, array $item): void {
         $item['instructor'] ?? null,
         !empty($item['premium']) ? 1 : 0,
         $item['price'] ?? 0,
-        json_encode($item['materials'] ?? [], JSON_UNESCAPED_SLASHES),
         $item['host_id'] ?? '',
         (int)($item['capacity'] ?? 0),
         (int)($item['popularity'] ?? 0),
