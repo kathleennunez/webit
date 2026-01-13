@@ -26,6 +26,9 @@ function category_active(string $category, string $currentPage, string $currentC
   <?php if (!empty($includeIntlTelInput)): ?>
     <link href="https://cdn.jsdelivr.net/npm/intl-tel-input@18.2.1/build/css/intlTelInput.css" rel="stylesheet">
   <?php endif; ?>
+  <?php if (!empty($includeAiChat)): ?>
+    <link rel="stylesheet" href="/assets/css/ai-chat.css">
+  <?php endif; ?>
   <link rel="icon" href="/assets/images/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/assets/css/style.css">
 </head>

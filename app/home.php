@@ -23,5 +23,6 @@ $shuffled = $webinars;
 shuffle($shuffled);
 $webinars = $shuffled;
 $selectedCategory = strtolower($selectedCategory);
+$includeAiChat = true;
 
 include __DIR__ . '/../pages/home.html';

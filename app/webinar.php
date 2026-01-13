@@ -12,6 +12,10 @@ foreach ($smsNotificationFiles as $smsFile) {
     require_once $smsFile;
   }
 }
+$paypalClientPath = BASE_PATH . '/integrations/paypal-integration/paypal-client.php';
+if (file_exists($paypalClientPath)) {
+  require_once $paypalClientPath;
+}
 
 $user = current_user();
 $id = $_GET['id'] ?? '';
@@ -37,6 +41,7 @@ $conflictWebinar = user_has_registration_conflict($id, $user['id']);
 $isPremium = (bool)($webinar['premium'] ?? false);
 $price = (float)($webinar['price'] ?? 0);
 $hasPaid = $isPremium ? has_paid_for_webinar($user['id'], $id) : true;
+$canRefund = $isPremium && $hasPaid;
 $isPublished = ($webinar['status'] ?? 'published') === 'published';
 $webinarTime = strtotime($webinar['datetime'] ?? '');
 $durationMinutes = parse_duration_minutes($webinar['duration'] ?? '60 min');
@@ -46,6 +51,7 @@ $capacity = (int)($webinar['capacity'] ?? 0);
 $capacityFull = $capacity > 0 && webinar_registration_count($id) >= $capacity;
 $capacityRemaining = $capacity > 0 ? max(0, $capacity - webinar_registration_count($id)) : null;
 $canRegister = !$locked && $hasPaid && !$alreadyRegistered && !$conflictWebinar && !$isPast && $isPublished && !$capacityFull;
+$canPurchase = $isPremium && !$hasPaid && !$alreadyRegistered && !$conflictWebinar && !$isPast && $isPublished && !$capacityFull;
 $isWaitlisted = is_user_waitlisted($id, $user['id']);
 $paypalClientId = $appConfig['paypal_client_id'] ?? '';
 $paymentNotice = !empty($_GET['paid']);
@@ -93,59 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register']) && !$lock
   } elseif ($conflictWebinar) {
     $error = 'This webinar conflicts with your registration for "' . $conflictWebinar['title'] . '".';
   } else {
-    $registration = register_for_webinar($id, $user['id']);
-    $hostName = full_name($hostUser);
-    if ($hostName === '') {
-      $hostName = 'Webinar host';
-    }
-    $webinarLink = '/app/webinar.php?id=' . urlencode($id);
-    $meetingLink = $webinar['meeting_url'] ?? '';
-    $calendarDetails = 'Webinar: ' . ($webinar['title'] ?? 'Webinar');
-    if ($meetingLink) {
-      $calendarDetails .= "\nMeeting link: " . $meetingLink;
-    }
-    $calendarDetails .= "\nView: " . $webinarLink;
-    $googleCalendarLink = build_google_calendar_link(
-      $webinar['title'] ?? 'Webinar',
-      $webinar['datetime'] ?? '',
-      $durationMinutes,
-      $calendarDetails,
-      $meetingLink
-    );
-    $registrationEmailContext = [
-      'name' => full_name($user),
-      'webinar_title' => $webinar['title'] ?? 'Webinar',
-      'webinar_datetime' => $displayDatetime ?: ($webinar['datetime'] ?? ''),
-      'webinar_duration' => $durationMinutes . ' minutes',
-      'webinar_host' => $hostName,
-      'webinar_link' => $webinarLink,
-      'google_calendar_link' => $googleCalendarLink,
-      'meeting_link' => $meetingLink,
-      'registration_id' => $registration['id'] ?? '',
-      'registered_at' => $registration['registered_at'] ?? ''
-    ];
-    send_email($user['email'], 'Registration Confirmed', 'email_registration.html', $registrationEmailContext);
-    notify_user($user['id'], 'Registration confirmed for: ' . $webinar['title'], 'registration', ['webinar_id' => $id]);
-    $smsEnabled = function_exists('sms_opted_in') ? sms_opted_in($user) : false;
-    $smsTemplateReady = function_exists('notifyRegistrationConfirmed');
-    if ($smsEnabled && $smsTemplateReady) {
-      notifyRegistrationConfirmed($user['phone'], $webinar['title'], $displayDatetime ?: ($webinar['datetime'] ?? ''));
-    } elseif (function_exists('log_notification')) {
-      log_notification('sms-debug', [
-        'event' => 'registration_confirmation',
-        'user_id' => $user['id'],
-        'phone' => $user['phone'] ?? '',
-        'sms_opt_in' => $user['sms_opt_in'] ?? null,
-        'sms_opted_in' => $smsEnabled,
-        'template_ready' => $smsTemplateReady
-      ]);
-    }
-    if ($webinarTime) {
-      $oneDay = date('c', strtotime('-1 day', $webinarTime));
-      $oneHour = date('c', strtotime('-1 hour', $webinarTime));
-      schedule_reminder($user['id'], 'Reminder: ' . $webinar['title'] . ' is tomorrow.', $oneDay, ['webinar_id' => $id]);
-      schedule_reminder($user['id'], 'Reminder: ' . $webinar['title'] . ' starts in 1 hour.', $oneHour, ['webinar_id' => $id]);
-    }
+    $registration = register_for_webinar_with_notifications($id, $user['id']);
     $message = 'You are registered! A confirmation email has been queued.';
     $alreadyRegistered = true;
     $canRegister = false;
@@ -158,17 +112,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['unregister']) && !$lo
   } elseif (!$alreadyRegistered) {
     $error = 'You are not registered for this webinar.';
   } else {
-    unregister_from_webinar($id, $user['id']);
-    $message = 'You have been unregistered from this webinar.';
-    $alreadyRegistered = false;
-    $capacityRemaining = $capacity > 0 ? max(0, $capacity - webinar_registration_count($id)) : null;
-    $capacityFull = $capacity > 0 && $capacityRemaining === 0;
-    if ($capacity > 0 && $capacityRemaining > 0) {
-      notify_waitlist_openings($id, $capacityRemaining, 'unregister');
+    $refundProcessed = false;
+    if ($isPremium && $hasPaid) {
+      $payment = latest_payment_for_webinar($user['id'], $id);
+      $captureId = $payment['capture_id'] ?? '';
+      if (!$captureId) {
+        $error = 'Unable to refund this payment automatically. Please contact support.';
+      } else {
+        try {
+          $refund = paypal_request('POST', '/v2/payments/captures/' . urlencode($captureId) . '/refund');
+          update_payment_record($payment['id'] ?? '', [
+            'status' => 'refunded',
+            'refund_id' => $refund['id'] ?? '',
+            'refunded_at' => date('c')
+          ]);
+          $refundProcessed = true;
+        } catch (Throwable $e) {
+          $error = 'Refund failed. Please try again or contact support.';
+        }
+      }
     }
-    $canRegister = !$isPast && $isPublished && !$capacityFull && !$conflictWebinar;
-    $registerLabel = 'Register Now';
-    $registerHint = '';
+
+    if (!$error) {
+      unregister_from_webinar($id, $user['id']);
+      $message = $refundProcessed ? 'You have been unregistered and refunded.' : 'You have been unregistered from this webinar.';
+      $alreadyRegistered = false;
+      $hasPaid = $isPremium ? false : $hasPaid;
+      $canRefund = false;
+      $capacityRemaining = $capacity > 0 ? max(0, $capacity - webinar_registration_count($id)) : null;
+      $capacityFull = $capacity > 0 && $capacityRemaining === 0;
+      if ($capacity > 0 && $capacityRemaining > 0) {
+        notify_waitlist_openings($id, $capacityRemaining, 'unregister');
+      }
+      $canRegister = !$isPast && $isPublished && !$capacityFull && !$conflictWebinar && (!$isPremium || $hasPaid);
+      $registerLabel = 'Register Now';
+      $registerHint = '';
+    }
   }
 }
 

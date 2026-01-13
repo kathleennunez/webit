@@ -103,12 +103,14 @@ try {
       echo json_encode(['error' => 'Missing webinar id']);
       exit;
     }
+    $captureId = $unit['payments']['captures'][0]['id'] ?? '';
     if (!has_paid_for_webinar($user['id'], $webinarId)) {
       $paymentRecord = log_payment([
         'webinar_id' => $webinarId,
         'amount' => $amountValue,
         'provider' => 'paypal-sandbox',
-        'status' => 'captured'
+        'status' => 'captured',
+        'capture_id' => $captureId
       ], $user['id']);
       $webinar = get_webinar($webinarId);
       $formatted = '$' . number_format($amountValue, 2);
@@ -133,6 +135,9 @@ try {
       if (sms_opted_in($user) && function_exists('notifyPaymentReceived')) {
         notifyPaymentReceived($user['phone'], $webinar['title'] ?? 'Webinar', $formatted);
       }
+    }
+    if (!user_is_registered($webinarId, $user['id'])) {
+      register_for_webinar_with_notifications($webinarId, $user['id']);
     }
     echo json_encode(['success' => true]);
     exit;

@@ -31,6 +31,37 @@ if ($type === 'subscription') {
     echo json_encode(['error' => 'Invalid webinar']);
     exit;
   }
+  if (($webinar['status'] ?? 'published') !== 'published') {
+    http_response_code(400);
+    echo json_encode(['error' => 'Webinar is unpublished']);
+    exit;
+  }
+  $webinarTime = strtotime($webinar['datetime'] ?? '');
+  if ($webinarTime !== false) {
+    $durationMinutes = parse_duration_minutes($webinar['duration'] ?? '60 min');
+    $endTime = $webinarTime + ($durationMinutes * 60);
+    if ($endTime < time()) {
+      http_response_code(400);
+      echo json_encode(['error' => 'Webinar has already started']);
+      exit;
+    }
+  }
+  if (user_is_registered($webinarId, $user['id'])) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Already registered']);
+    exit;
+  }
+  if (user_has_registration_conflict($webinarId, $user['id'])) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Time conflict with another registration']);
+    exit;
+  }
+  $capacity = (int)($webinar['capacity'] ?? 0);
+  if ($capacity > 0 && webinar_registration_count($webinarId) >= $capacity) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Webinar is at capacity']);
+    exit;
+  }
   if (has_paid_for_webinar($user['id'], $webinarId)) {
     http_response_code(400);
     echo json_encode(['error' => 'Already paid']);

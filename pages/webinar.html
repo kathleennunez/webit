@@ -70,7 +70,7 @@
       </div>
     <?php endif; ?>
     <div class="mt-4 d-flex flex-wrap gap-2">
-      <?php if ($isPremium && !$hasPaid): ?>
+      <?php if ($canPurchase): ?>
         <div id="paypal-webinar"></div>
       <?php elseif ($canRegister): ?>
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#registerModal">
@@ -83,7 +83,9 @@
       <?php endif; ?>
       <?php if ($alreadyRegistered && !$isPast): ?>
         <form method="post">
-          <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#unregisterModal">Unregister</button>
+          <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#unregisterModal">
+            <?php echo $canRefund ? 'Unregister & Refund' : 'Unregister'; ?>
+          </button>
         </form>
       <?php endif; ?>
       <?php if ($alreadyRegistered && !$isPast && !empty($webinar['meeting_url'])): ?>
@@ -232,11 +234,15 @@
       </div>
       <form method="post">
         <div class="modal-body">
-          <p class="mb-0">Unregister from this webinar?</p>
+          <p class="mb-0">
+            <?php echo $canRefund ? 'Unregister and automatically refund this payment?' : 'Unregister from this webinar?'; ?>
+          </p>
         </div>
         <div class="modal-footer border-0">
           <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-outline-danger" name="unregister" value="1">Unregister</button>
+          <button type="submit" class="btn btn-outline-danger" name="unregister" value="1">
+            <?php echo $canRefund ? 'Unregister & Refund' : 'Unregister'; ?>
+          </button>
         </div>
       </form>
     </div>
@@ -264,7 +270,7 @@
     </div>
   </div>
 </div>
-<?php if ($isPremium && !$hasPaid): ?>
+<?php if ($canPurchase): ?>
   <?php if (!empty($paypalClientId)): ?>
     <script src="https://www.paypal.com/sdk/js?client-id=<?php echo sanitize($paypalClientId); ?>&currency=USD"></script>
   <?php endif; ?>

@@ -80,6 +80,9 @@ function ensure_tables(): void {
     amount DECIMAL(10,2) DEFAULT 0,
     provider VARCHAR(32) NOT NULL,
     status VARCHAR(32) NOT NULL,
+    capture_id VARCHAR(128) NULL,
+    refund_id VARCHAR(128) NULL,
+    refunded_at DATETIME NULL,
     created_at DATETIME NOT NULL,
     INDEX idx_pay_webinar (webinar_id),
     INDEX idx_pay_user (user_id)
@@ -174,6 +177,18 @@ function ensure_tables(): void {
           last_name = IF(last_name IS NULL OR last_name = '', TRIM(SUBSTRING(name, LOCATE(' ', name) + 1)), last_name)
       WHERE name IS NOT NULL AND name <> ''");
     $pdo->exec("ALTER TABLE users DROP COLUMN name");
+  }
+
+  $paymentColumnsToAdd = [
+    'capture_id' => "ALTER TABLE payments ADD COLUMN capture_id VARCHAR(128) NULL",
+    'refund_id' => "ALTER TABLE payments ADD COLUMN refund_id VARCHAR(128) NULL",
+    'refunded_at' => "ALTER TABLE payments ADD COLUMN refunded_at DATETIME NULL"
+  ];
+  foreach ($paymentColumnsToAdd as $column => $statement) {
+    $exists = $pdo->query("SHOW COLUMNS FROM payments LIKE '$column'")->fetch();
+    if (!$exists) {
+      $pdo->exec($statement);
+    }
   }
 
   $ready = true;
@@ -397,7 +412,7 @@ function write_json(string $file, array $data): void {
       break;
     case 'payments':
       $pdo->exec('DELETE FROM payments');
-      $stmt = $pdo->prepare('INSERT INTO payments (id, user_id, webinar_id, amount, provider, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)');
+      $stmt = $pdo->prepare('INSERT INTO payments (id, user_id, webinar_id, amount, provider, status, capture_id, refund_id, refunded_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
       foreach ($data as $row) {
         $stmt->execute([
           $row['id'] ?? '',
@@ -406,6 +421,9 @@ function write_json(string $file, array $data): void {
           $row['amount'] ?? 0,
           $row['provider'] ?? 'paypal',
           $row['status'] ?? 'captured',
+          $row['capture_id'] ?? null,
+          $row['refund_id'] ?? null,
+          !empty($row['refunded_at']) ? date('Y-m-d H:i:s', strtotime($row['refunded_at'])) : null,
           !empty($row['created_at']) ? date('Y-m-d H:i:s', strtotime($row['created_at'])) : date('Y-m-d H:i:s')
         ]);
       }

@@ -114,11 +114,13 @@ try {
       $webinarId = $matches[1];
     }
     if ($webinarId && !has_paid_for_webinar($userId, $webinarId)) {
+      $captureId = $resource['id'] ?? '';
       $paymentRecord = log_payment([
         'webinar_id' => $webinarId,
         'amount' => $amountValue,
         'provider' => 'paypal-sandbox',
-        'status' => 'captured'
+        'status' => 'captured',
+        'capture_id' => $captureId
       ], $userId);
       $webinar = get_webinar($webinarId);
       $formatted = '$' . number_format($amountValue, 2);
@@ -128,6 +130,9 @@ try {
         'payment',
         ['webinar_id' => $webinarId]
       );
+      if (!user_is_registered($webinarId, $userId)) {
+        register_for_webinar_with_notifications($webinarId, $userId);
+      }
       $user = get_user_by_id($userId);
       if (function_exists('notifyPaymentReceived')) {
         if (sms_opted_in($user)) {
