@@ -37,16 +37,20 @@ function sendSMS($recipient, $message)
         return $ok ? ($result['response'] ?? true) : false;
     }
 
-    $response = sendSMSViaLegacyGateway($recipient, $message, $config['legacy_gateway'] ?? []);
+    $result = sendSMSViaLegacyGateway($recipient, $message, $config['legacy_gateway'] ?? []);
+    $ok = is_array($result) ? (bool)($result['ok'] ?? false) : (bool)$result;
     if (function_exists('log_notification')) {
         log_notification('sms-outbound', [
             'to' => $recipient,
             'message' => $message,
             'provider' => 'legacy',
-            'status' => $response ? 'sent' : 'failed'
+            'status' => $ok ? 'sent' : 'failed',
+            'http_status' => is_array($result) ? ($result['status'] ?? null) : null,
+            'response' => is_array($result) ? ($result['response'] ?? null) : null,
+            'error' => is_array($result) ? ($result['error'] ?? null) : null
         ]);
     }
-    return $response;
+    return $ok ? (is_array($result) ? ($result['response'] ?? true) : $result) : false;
 }
 
 function sendSMSViaSMSGate($recipient, $message, array $smsGateConfig)
@@ -114,7 +118,12 @@ function sendSMSViaLegacyGateway($recipient, $message, array $legacyConfig)
     $password = $legacyConfig['password'] ?? '';
     if (!$gatewayUrl || !$username || !$password) {
         error_log('Legacy SMS config missing gateway URL or credentials.');
-        return false;
+        return [
+            'ok' => false,
+            'status' => null,
+            'response' => null,
+            'error' => 'Missing legacy gateway URL or credentials.'
+        ];
     }
 
     $payload = [
@@ -136,13 +145,29 @@ function sendSMSViaLegacyGateway($recipient, $message, array $legacyConfig)
 
     $context = stream_context_create($options);
     $response = @file_get_contents($gatewayUrl, false, $context);
+    $statusLine = $http_response_header[0] ?? '';
+    $status = null;
+    if ($statusLine && preg_match('/\s(\d{3})\s/', $statusLine, $matches)) {
+        $status = (int)$matches[1];
+    }
     if ($response === false) {
         $lastError = error_get_last();
-        $statusLine = $http_response_header[0] ?? 'No response headers';
-        error_log('SMS gateway request failed: ' . $statusLine);
+        $statusLabel = $statusLine ?: 'No response headers';
+        error_log('SMS gateway request failed: ' . $statusLabel);
         if (!empty($lastError['message'])) {
             error_log('SMS gateway error: ' . $lastError['message']);
         }
+        return [
+            'ok' => false,
+            'status' => $status,
+            'response' => null,
+            'error' => $lastError['message'] ?? 'Legacy gateway request failed.'
+        ];
     }
-    return $response;
+    return [
+        'ok' => true,
+        'status' => $status,
+        'response' => $response,
+        'error' => null
+    ];
 }

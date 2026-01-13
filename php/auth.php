@@ -52,8 +52,14 @@ function update_user_profile(string $userId, array $payload): array {
         $user['name'] = trim($firstName . ' ' . $lastName);
       }
       $user['email'] = $payload['email'] ?? $user['email'];
+      $phonePayload = null;
       if (array_key_exists('phone', $payload)) {
-        $user['phone'] = normalize_phone_ph((string)$payload['phone']);
+        $phonePayload = (string)$payload['phone'];
+      } elseif (!empty($payload['phone_display'])) {
+        $phonePayload = (string)$payload['phone_display'];
+      }
+      if ($phonePayload !== null) {
+        $user['phone'] = normalize_phone_ph($phonePayload);
       }
       if (array_key_exists('sms_opt_in', $payload)) {
         $user['sms_opt_in'] = !empty($payload['sms_opt_in']);

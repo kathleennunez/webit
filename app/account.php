@@ -6,6 +6,11 @@ require_non_admin();
 $includeIntlTelInput = true;
 
 $user = current_user();
+$freshUser = $user ? get_user_by_id($user['id']) : null;
+if ($freshUser) {
+  $_SESSION['user'] = $freshUser;
+  $user = $freshUser;
+}
 $profileUser = $user;
 $isSelf = true;
 $message = '';

@@ -28,31 +28,6 @@ if (isset($data['event'], $data['payload']) && is_array($data['payload'])) {
     $textBody = (string)($payload['message'] ?? $textBody);
 }
 $text = strtoupper(trim($textBody));
-$normalizedFrom = preg_replace('/\D+/', '', $from);
-
-if ($text === 'STOP') {
-    $users = read_json('users.json');
-    foreach ($users as &$user) {
-        $phone = preg_replace('/\D+/', '', (string)($user['phone'] ?? ''));
-        if ($phone && $phone === $normalizedFrom) {
-            $user['sms_opt_in'] = false;
-        }
-    }
-    unset($user);
-    write_json('users.json', $users);
-}
-
-if ($text === 'CONFIRM') {
-    $users = read_json('users.json');
-    foreach ($users as &$user) {
-        $phone = preg_replace('/\D+/', '', (string)($user['phone'] ?? ''));
-        if ($phone && $phone === $normalizedFrom) {
-            $user['sms_opt_in'] = true;
-        }
-    }
-    unset($user);
-    write_json('users.json', $users);
-}
 
 log_notification('sms-inbound', [
     'from' => $from,

@@ -226,7 +226,7 @@ if (phoneInputs.length && window.intlTelInput) {
       instance.setNumber(storedValue);
     }
 
-    input.addEventListener('blur', () => {
+    const syncPhoneValue = () => {
       const number = instance.getNumber();
       if (!number) {
         return;
@@ -236,7 +236,13 @@ if (phoneInputs.length && window.intlTelInput) {
       if (hidden) {
         hidden.value = number;
       }
-    });
+    };
+
+    input.addEventListener('blur', syncPhoneValue);
+    input.addEventListener('change', syncPhoneValue);
+    if (input.form) {
+      input.form.addEventListener('submit', syncPhoneValue);
+    }
   });
 }
 
