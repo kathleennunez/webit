@@ -84,11 +84,25 @@ try {
       'subscription',
       ['plan' => $plan]
     );
+    $user = get_user_by_id($userId);
     if (function_exists('notifySubscriptionConfirmed')) {
-      $user = get_user_by_id($userId);
       if (sms_opted_in($user)) {
         notifySubscriptionConfirmed($user['phone'], full_name($user));
       }
+    }
+    if (!empty($user['email'])) {
+      $subscription = get_subscription($userId);
+      $planLabel = ucfirst((string)($subscription['plan'] ?? $plan));
+      $renewalAt = format_datetime_for_user($subscription['renewal_at'] ?? '', $user['timezone'] ?? null);
+      $subscriptionEmailContext = [
+        'name' => full_name($user),
+        'plan' => $planLabel,
+        'renewal_at' => $renewalAt ?: ($subscription['renewal_at'] ?? ''),
+        'provider' => $subscription['provider'] ?? 'paypal',
+        'manage_link' => '/app/settings.php',
+        'subscription_id' => $subscription['id'] ?? ''
+      ];
+      send_email($user['email'], 'Subscription Activated', 'email_subscription.html', $subscriptionEmailContext);
     }
     echo 'ok';
     exit;
@@ -100,7 +114,7 @@ try {
       $webinarId = $matches[1];
     }
     if ($webinarId && !has_paid_for_webinar($userId, $webinarId)) {
-      log_payment([
+      $paymentRecord = log_payment([
         'webinar_id' => $webinarId,
         'amount' => $amountValue,
         'provider' => 'paypal-sandbox',
@@ -114,11 +128,25 @@ try {
         'payment',
         ['webinar_id' => $webinarId]
       );
+      $user = get_user_by_id($userId);
       if (function_exists('notifyPaymentReceived')) {
-        $user = get_user_by_id($userId);
         if (sms_opted_in($user)) {
           notifyPaymentReceived($user['phone'], $webinar['title'] ?? 'Webinar', $formatted);
         }
+      }
+      if (!empty($user['email'])) {
+        $paymentDate = format_datetime_for_user($paymentRecord['created_at'] ?? '', $user['timezone'] ?? null);
+        $webinarLink = '/app/webinar.php?id=' . urlencode($webinarId);
+        $paymentEmailContext = [
+          'name' => full_name($user),
+          'webinar_title' => $webinar['title'] ?? 'Webinar',
+          'amount_formatted' => $formatted,
+          'payment_date' => $paymentDate ?: ($paymentRecord['created_at'] ?? ''),
+          'provider' => $paymentRecord['provider'] ?? 'paypal',
+          'payment_id' => $paymentRecord['id'] ?? '',
+          'webinar_link' => $webinarLink
+        ];
+        send_email($user['email'], 'Payment Receipt', 'email_payment_receipt.html', $paymentEmailContext);
       }
     }
     echo 'ok';

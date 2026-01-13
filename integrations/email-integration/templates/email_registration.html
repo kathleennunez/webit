@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Registration Confirmed</title>
+  </head>
+  <body style="margin:0;padding:0;background-color:#f4f6f8;font-family:Arial,Helvetica,sans-serif;color:#1b1b1b;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f8;padding:24px 0;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.08);">
+            <tr>
+              <td style="padding:28px 32px;background-color:#0f172a;color:#ffffff;">
+                <h1 style="margin:0;font-size:22px;line-height:1.3;">You're registered!</h1>
+                <p style="margin:8px 0 0;font-size:14px;opacity:0.9;">We saved your spot and sent the details below.</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:28px 32px;">
+                <p style="margin:0 0 16px;font-size:15px;">Hi {{name}},</p>
+                <p style="margin:0 0 18px;font-size:15px;">
+                  Your registration for <strong>{{webinar_title}}</strong> is confirmed.
+                </p>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+                  <tr>
+                    <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:14px;"><strong>Date</strong></td>
+                    <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:14px;text-align:right;">{{webinar_datetime}}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:14px;"><strong>Duration</strong></td>
+                    <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:14px;text-align:right;">{{webinar_duration}}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:14px;"><strong>Host</strong></td>
+                    <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:14px;text-align:right;">{{webinar_host}}</td>
+                  </tr>
+                </table>
+                <p style="margin:20px 0 0;font-size:14px;">
+                  <a href="{{webinar_link}}" style="color:#2563eb;text-decoration:none;">View webinar details</a>
+                </p>
+                <p style="margin:16px 0 0;font-size:14px;">
+                  <a href="{{google_calendar_link}}" style="display:inline-block;padding:10px 16px;background-color:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;">
+                    Add to Google Calendar
+                  </a>
+                </p>
+                <p style="margin:12px 0 0;font-size:14px;color:#6b7280;">
+                  Meeting link: {{meeting_link}}
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 32px;background-color:#f8fafc;border-top:1px solid #e5e7eb;">
+                <p style="margin:0;font-size:12px;color:#475569;">
+                  Registration ID: {{registration_id}}<br>
+                  Registered at: {{registered_at}}
+                </p>
+              </td>
+            </tr>
+          </table>
+          <p style="margin:16px 0 0;font-size:12px;color:#94a3b8;">This is an automated message from Webit.</p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -31,6 +31,7 @@ function load_env(string $path): void {
 
 load_env(BASE_PATH . '/.env');
 load_env(BASE_PATH . '/integrations/sms-integration/.env');
+load_env(BASE_PATH . '/integrations/email-integration/.env');
 
 require_once BASE_PATH . '/php/utils.php';
 require_once BASE_PATH . '/php/db.php';

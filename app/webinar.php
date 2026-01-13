@@ -94,12 +94,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register']) && !$lock
     $error = 'This webinar conflicts with your registration for "' . $conflictWebinar['title'] . '".';
   } else {
     $registration = register_for_webinar($id, $user['id']);
-    send_email($user['email'], 'Registration Confirmed', 'email_registration.html', $registration);
+    $hostName = full_name($hostUser);
+    if ($hostName === '') {
+      $hostName = 'Webinar host';
+    }
+    $webinarLink = '/app/webinar.php?id=' . urlencode($id);
+    $meetingLink = $webinar['meeting_url'] ?? '';
+    $calendarDetails = 'Webinar: ' . ($webinar['title'] ?? 'Webinar');
+    if ($meetingLink) {
+      $calendarDetails .= "\nMeeting link: " . $meetingLink;
+    }
+    $calendarDetails .= "\nView: " . $webinarLink;
+    $googleCalendarLink = build_google_calendar_link(
+      $webinar['title'] ?? 'Webinar',
+      $webinar['datetime'] ?? '',
+      $durationMinutes,
+      $calendarDetails,
+      $meetingLink
+    );
+    $registrationEmailContext = [
+      'name' => full_name($user),
+      'webinar_title' => $webinar['title'] ?? 'Webinar',
+      'webinar_datetime' => $displayDatetime ?: ($webinar['datetime'] ?? ''),
+      'webinar_duration' => $durationMinutes . ' minutes',
+      'webinar_host' => $hostName,
+      'webinar_link' => $webinarLink,
+      'google_calendar_link' => $googleCalendarLink,
+      'meeting_link' => $meetingLink,
+      'registration_id' => $registration['id'] ?? '',
+      'registered_at' => $registration['registered_at'] ?? ''
+    ];
+    send_email($user['email'], 'Registration Confirmed', 'email_registration.html', $registrationEmailContext);
     notify_user($user['id'], 'Registration confirmed for: ' . $webinar['title'], 'registration', ['webinar_id' => $id]);
     $smsEnabled = function_exists('sms_opted_in') ? sms_opted_in($user) : false;
     $smsTemplateReady = function_exists('notifyRegistrationConfirmed');
     if ($smsEnabled && $smsTemplateReady) {
-      notifyRegistrationConfirmed($user['phone'], $webinar['title']);
+      notifyRegistrationConfirmed($user['phone'], $webinar['title'], $displayDatetime ?: ($webinar['datetime'] ?? ''));
     } elseif (function_exists('log_notification')) {
       log_notification('sms-debug', [
         'event' => 'registration_confirmation',
@@ -153,6 +183,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['join_waitlist']) && !
     add_waitlist_entry($id, $user['id']);
     $message = 'You have been added to the waitlist.';
     $isWaitlisted = true;
+    if (!empty($user['email'])) {
+      $hostName = full_name($hostUser) ?: 'Webinar host';
+      $webinarLink = '/app/webinar.php?id=' . urlencode($id);
+      $waitlistEmailContext = [
+        'name' => full_name($user),
+        'webinar_title' => $webinar['title'] ?? 'Webinar',
+        'webinar_datetime' => $displayDatetime ?: ($webinar['datetime'] ?? ''),
+        'webinar_host' => $hostName,
+        'webinar_link' => $webinarLink
+      ];
+      send_email($user['email'], 'Waitlist Confirmed', 'email_waitlist_joined.html', $waitlistEmailContext);
+    }
     if (sms_opted_in($user) && function_exists('notifyWebinarWaitlisted')) {
       notifyWebinarWaitlisted($user['phone'], $webinar['title']);
     }

@@ -65,8 +65,23 @@ function notify_waitlist_openings(string $webinarId, int $availableSeats, string
       'waitlist',
       ['webinar_id' => $webinarId, 'reason' => $reason]
     );
+    $user = get_user_by_id($userId);
+    if (!empty($user['email'])) {
+      $displayDatetime = format_datetime_for_user($webinar['datetime'] ?? '', $user['timezone'] ?? null);
+      $hostUser = !empty($webinar['host_id']) ? get_user_by_id($webinar['host_id']) : null;
+      $hostName = full_name($hostUser) ?: 'Webinar host';
+      $webinarLink = '/app/webinar.php?id=' . urlencode($webinarId);
+      $waitlistOpenEmailContext = [
+        'name' => full_name($user),
+        'webinar_title' => $title,
+        'webinar_datetime' => $displayDatetime ?: ($webinar['datetime'] ?? ''),
+        'webinar_host' => $hostName,
+        'webinar_link' => $webinarLink,
+        'available_seats' => $availableSeats
+      ];
+      send_email($user['email'], 'Waitlist Spot Opened', 'email_waitlist_opening.html', $waitlistOpenEmailContext);
+    }
     if (function_exists('notifyWaitlistOpening')) {
-      $user = get_user_by_id($userId);
       if (sms_opted_in($user)) {
         notifyWaitlistOpening($user['phone'], $title);
       }

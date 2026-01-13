@@ -4,6 +4,11 @@ if (file_exists($feedbackSmsPath)) {
   require_once $feedbackSmsPath;
 }
 
+$emailGatewayPath = BASE_PATH . '/integrations/email-integration/core/email_gateway.php';
+if (file_exists($emailGatewayPath)) {
+  require_once $emailGatewayPath;
+}
+
 function sms_opted_in(?array $user): bool {
   if (!$user) {
     return false;
@@ -30,6 +35,27 @@ function send_email(string $to, string $subject, string $template, array $contex
     'context' => $context
   ];
   log_notification('email', $payload);
+
+  if (!function_exists('send_email_via_gateway')) {
+    return;
+  }
+
+  log_notification('email-outbound', [
+    'to' => $to,
+    'subject' => $subject,
+    'template' => $template,
+    'status' => 'attempted'
+  ]);
+
+  $result = send_email_via_gateway($to, $subject, $template, $context);
+  log_notification('email-outbound', [
+    'to' => $to,
+    'subject' => $subject,
+    'template' => $template,
+    'provider' => $result['provider'] ?? 'phpmailer',
+    'status' => ($result['ok'] ?? false) ? 'sent' : 'failed',
+    'error' => $result['error'] ?? null
+  ]);
 }
 
 function send_sms(string $to, string $message): void {
@@ -172,11 +198,23 @@ function send_feedback_prompts_for_user(string $userId): void {
       'feedback',
       ['webinar_id' => $webinarId]
     );
+    $user = get_user_by_id($userId);
     if (function_exists('notifyFeedbackPrompt')) {
-      $user = get_user_by_id($userId);
       if (sms_opted_in($user)) {
         notifyFeedbackPrompt($user['phone'], $webinar['title'] ?? 'your webinar');
       }
+    }
+    if (!empty($user['email'])) {
+      $hostUser = !empty($webinar['host_id']) ? get_user_by_id($webinar['host_id']) : null;
+      $hostName = full_name($hostUser) ?: 'Webinar host';
+      $webinarLink = '/app/webinar.php?id=' . urlencode($webinarId);
+      $feedbackEmailContext = [
+        'name' => full_name($user),
+        'webinar_title' => $webinar['title'] ?? 'your webinar',
+        'webinar_host' => $hostName,
+        'webinar_link' => $webinarLink
+      ];
+      send_email($user['email'], 'How was the webinar?', 'email_feedback_prompt.html', $feedbackEmailContext);
     }
   }
 }

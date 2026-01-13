@@ -88,6 +88,97 @@ function format_time_for_user(string $datetime, ?string $timezone): string {
   return $dt->format('g:i A');
 }
 
+function ics_escape(string $value): string {
+  $escaped = str_replace('\\', '\\\\', $value);
+  $escaped = str_replace(';', '\;', $escaped);
+  $escaped = str_replace(',', '\,', $escaped);
+  $escaped = str_replace("\r", '', $escaped);
+  return str_replace("\n", '\n', $escaped);
+}
+
+function build_ics_content(
+  string $title,
+  string $startDatetime,
+  int $durationMinutes,
+  string $uid = '',
+  string $description = '',
+  string $url = ''
+): string {
+  $start = parse_utc_datetime($startDatetime);
+  if (!$start) {
+    return '';
+  }
+  $end = clone $start;
+  $end->modify('+' . max(1, $durationMinutes) . ' minutes');
+  $uidValue = $uid !== '' ? $uid : bin2hex(random_bytes(8)) . '@webit';
+  $format = 'Ymd\THis\Z';
+  $lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Webit//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    'UID:' . ics_escape($uidValue),
+    'DTSTAMP:' . gmdate($format),
+    'DTSTART:' . $start->setTimezone(new DateTimeZone('UTC'))->format($format),
+    'DTEND:' . $end->setTimezone(new DateTimeZone('UTC'))->format($format),
+    'SUMMARY:' . ics_escape($title),
+    'DESCRIPTION:' . ics_escape($description ?: ('Webinar: ' . $title))
+  ];
+  if ($url !== '') {
+    $lines[] = 'URL:' . ics_escape($url);
+  }
+  $lines[] = 'END:VEVENT';
+  $lines[] = 'END:VCALENDAR';
+  return implode("\r\n", $lines) . "\r\n";
+}
+
+function build_ics_data_uri(
+  string $title,
+  string $startDatetime,
+  int $durationMinutes,
+  string $uid = '',
+  string $description = '',
+  string $url = ''
+): string {
+  $ics = build_ics_content($title, $startDatetime, $durationMinutes, $uid, $description, $url);
+  if ($ics === '') {
+    return '';
+  }
+  return 'data:text/calendar;charset=utf-8;base64,' . base64_encode($ics);
+}
+
+function build_google_calendar_link(
+  string $title,
+  string $startDatetime,
+  int $durationMinutes,
+  string $details = '',
+  string $location = ''
+): string {
+  $start = parse_utc_datetime($startDatetime);
+  if (!$start) {
+    return '';
+  }
+  $end = clone $start;
+  $end->modify('+' . max(1, $durationMinutes) . ' minutes');
+  $format = 'Ymd\THis\Z';
+  $dates = $start->setTimezone(new DateTimeZone('UTC'))->format($format)
+    . '/' . $end->setTimezone(new DateTimeZone('UTC'))->format($format);
+  $query = [
+    'action' => 'TEMPLATE',
+    'text' => $title,
+    'dates' => $dates
+  ];
+  if ($details !== '') {
+    $query['details'] = $details;
+  }
+  if ($location !== '') {
+    $query['location'] = $location;
+  }
+  return 'https://calendar.google.com/calendar/render?' . http_build_query($query);
+}
+
 function date_key_for_user(string $datetime, ?string $timezone): string {
   $dt = parse_utc_datetime($datetime);
   if (!$dt) {

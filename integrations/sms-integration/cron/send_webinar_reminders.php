@@ -6,13 +6,11 @@ $pdo = db_connection();
 $startMin = date('Y-m-d H:i:s', strtotime('+59 minutes'));
 $startMax = date('Y-m-d H:i:s', strtotime('+61 minutes'));
 $stmt = $pdo->prepare("
-    SELECT u.phone, w.title, w.datetime
+    SELECT u.id, u.phone, u.email, u.first_name, u.last_name, u.timezone, u.sms_opt_in, w.id AS webinar_id, w.title, w.datetime
     FROM registrations r
     JOIN users u ON r.user_id = u.id
     JOIN webinars w ON r.webinar_id = w.id
     WHERE w.datetime BETWEEN :start_min AND :start_max
-      AND u.sms_opt_in = 1
-      AND u.phone IS NOT NULL
 ");
 $stmt->execute([
     'start_min' => $startMin,
@@ -20,12 +18,60 @@ $stmt->execute([
 ]);
 
 foreach ($stmt->fetchAll() as $row) {
-    if (empty($row['phone'])) {
+    if (!empty($row['phone']) && (int)($row['sms_opt_in'] ?? 0) !== 0) {
+        notifyWebinarReminder(
+            $row['phone'],
+            $row['title'],
+            date('h:i A', strtotime($row['datetime']))
+        );
+    }
+    if (!empty($row['email'])) {
+        $recipientName = full_name([
+            'first_name' => $row['first_name'] ?? '',
+            'last_name' => $row['last_name'] ?? ''
+        ]);
+        $displayDatetime = format_datetime_for_user($row['datetime'], $row['timezone'] ?? null);
+        $reminderEmailContext = [
+            'name' => $recipientName,
+            'webinar_title' => $row['title'],
+            'webinar_datetime' => $displayDatetime ?: $row['datetime'],
+            'reminder_label' => 'Starts in 1 hour',
+            'webinar_link' => '/app/webinar.php?id=' . urlencode($row['webinar_id'])
+        ];
+        send_email($row['email'], 'Webinar Reminder: 1 Hour', 'email_reminder.html', $reminderEmailContext);
+    }
+}
+
+$dayMin = date('Y-m-d H:i:s', strtotime('+23 hours 59 minutes'));
+$dayMax = date('Y-m-d H:i:s', strtotime('+24 hours 1 minute'));
+$stmtDay = $pdo->prepare("
+    SELECT u.id, u.email, u.first_name, u.last_name, u.timezone, w.id AS webinar_id, w.title, w.datetime
+    FROM registrations r
+    JOIN users u ON r.user_id = u.id
+    JOIN webinars w ON r.webinar_id = w.id
+    WHERE w.datetime BETWEEN :start_min AND :start_max
+      AND u.email IS NOT NULL
+");
+$stmtDay->execute([
+    'start_min' => $dayMin,
+    'start_max' => $dayMax
+]);
+
+foreach ($stmtDay->fetchAll() as $row) {
+    if (empty($row['email'])) {
         continue;
     }
-    notifyWebinarReminder(
-        $row['phone'],
-        $row['title'],
-        date('h:i A', strtotime($row['datetime']))
-    );
+    $recipientName = full_name([
+        'first_name' => $row['first_name'] ?? '',
+        'last_name' => $row['last_name'] ?? ''
+    ]);
+    $displayDatetime = format_datetime_for_user($row['datetime'], $row['timezone'] ?? null);
+    $reminderEmailContext = [
+        'name' => $recipientName,
+        'webinar_title' => $row['title'],
+        'webinar_datetime' => $displayDatetime ?: $row['datetime'],
+        'reminder_label' => 'Starts tomorrow',
+        'webinar_link' => '/app/webinar.php?id=' . urlencode($row['webinar_id'])
+    ];
+    send_email($row['email'], 'Webinar Reminder: Tomorrow', 'email_reminder.html', $reminderEmailContext);
 }

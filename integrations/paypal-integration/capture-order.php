@@ -55,7 +55,17 @@ try {
     $existing = get_subscription($user['id']);
     if (!$existing) {
       $subscription = create_subscription($user['id'], $plan, 'paypal-sandbox');
-      send_email($user['email'], 'Subscription Activated', 'email_subscription.html', $subscription);
+      $planLabel = ucfirst((string)($subscription['plan'] ?? $plan));
+      $renewalAt = format_datetime_for_user($subscription['renewal_at'] ?? '', $user['timezone'] ?? null);
+      $subscriptionEmailContext = [
+        'name' => full_name($user),
+        'plan' => $planLabel,
+        'renewal_at' => $renewalAt ?: ($subscription['renewal_at'] ?? ''),
+        'provider' => $subscription['provider'] ?? 'paypal',
+        'manage_link' => '/app/settings.php',
+        'subscription_id' => $subscription['id'] ?? ''
+      ];
+      send_email($user['email'], 'Subscription Activated', 'email_subscription.html', $subscriptionEmailContext);
     } else {
       $subscriptions = read_json('subscriptions.json');
       foreach ($subscriptions as &$entry) {
@@ -94,7 +104,7 @@ try {
       exit;
     }
     if (!has_paid_for_webinar($user['id'], $webinarId)) {
-      log_payment([
+      $paymentRecord = log_payment([
         'webinar_id' => $webinarId,
         'amount' => $amountValue,
         'provider' => 'paypal-sandbox',
@@ -102,6 +112,18 @@ try {
       ], $user['id']);
       $webinar = get_webinar($webinarId);
       $formatted = '$' . number_format($amountValue, 2);
+      $paymentDate = format_datetime_for_user($paymentRecord['created_at'] ?? '', $user['timezone'] ?? null);
+      $webinarLink = '/app/webinar.php?id=' . urlencode($webinarId);
+      $paymentEmailContext = [
+        'name' => full_name($user),
+        'webinar_title' => $webinar['title'] ?? 'Webinar',
+        'amount_formatted' => $formatted,
+        'payment_date' => $paymentDate ?: ($paymentRecord['created_at'] ?? ''),
+        'provider' => $paymentRecord['provider'] ?? 'paypal',
+        'payment_id' => $paymentRecord['id'] ?? '',
+        'webinar_link' => $webinarLink
+      ];
+      send_email($user['email'], 'Payment Receipt', 'email_payment_receipt.html', $paymentEmailContext);
       notify_user(
         $user['id'],
         'Payment received for premium webinar "' . ($webinar['title'] ?? 'Webinar') . '" (' . $formatted . ').',
