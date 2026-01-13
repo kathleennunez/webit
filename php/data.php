@@ -143,6 +143,19 @@ function ensure_tables(): void {
     INDEX idx_feedback_user (user_id)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+  $pdo->exec("CREATE TABLE IF NOT EXISTS sms_feedback (
+    id VARCHAR(64) PRIMARY KEY,
+    user_id VARCHAR(64) NULL,
+    webinar_id VARCHAR(64) NULL,
+    phone VARCHAR(64) NOT NULL,
+    message TEXT NOT NULL,
+    raw_payload JSON NULL,
+    created_at DATETIME NOT NULL,
+    INDEX idx_sms_feedback_user (user_id),
+    INDEX idx_sms_feedback_webinar (webinar_id),
+    INDEX idx_sms_feedback_phone (phone)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
   $columnsToAdd = [
     'sms_opt_in' => "ALTER TABLE users ADD COLUMN sms_opt_in TINYINT(1) DEFAULT 0",
     'first_name' => "ALTER TABLE users ADD COLUMN first_name VARCHAR(255) NULL",
@@ -267,6 +280,17 @@ function read_json(string $file): array {
     case 'feedback':
       $rows = $pdo->query('SELECT * FROM feedback ORDER BY created_at ASC')->fetchAll();
       return array_map(function ($row) {
+        if (!empty($row['created_at'])) {
+          $row['created_at'] = gmdate('c', strtotime($row['created_at']));
+        }
+        return $row;
+      }, $rows);
+    case 'sms_feedback':
+      $rows = $pdo->query('SELECT * FROM sms_feedback ORDER BY created_at ASC')->fetchAll();
+      return array_map(function ($row) {
+        if (!empty($row['raw_payload'])) {
+          $row['raw_payload'] = json_decode($row['raw_payload'], true);
+        }
         if (!empty($row['created_at'])) {
           $row['created_at'] = gmdate('c', strtotime($row['created_at']));
         }
