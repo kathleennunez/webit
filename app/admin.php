@@ -96,10 +96,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $message = 'Please add a broadcast message before sending.';
       $messageTone = 'warning';
     } else {
+      $broadcast = [
+        'id' => uniqid('bcast_', true),
+        'admin_user_id' => $user['id'] ?? '',
+        'message' => $note,
+        'category' => $category,
+        'created_at' => date('c')
+      ];
+      append_json('admin_broadcasts.json', $broadcast);
       $count = 0;
       foreach ($users as $entry) {
         if (!empty($entry['id'])) {
-          notify_user($entry['id'], $note, $category);
+          notify_user($entry['id'], $note, $category, ['broadcast_id' => $broadcast['id']]);
           $count++;
         }
       }
@@ -131,58 +139,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if ($action === 'update-webinar') {
     $webinarId = $_POST['webinar_id'] ?? '';
     $status = $_POST['status'] ?? 'published';
-    $allowed = ['published', 'draft', 'canceled'];
+    $allowed = ['published', 'draft', 'canceled', 'delete'];
     if (!$webinarId || !in_array($status, $allowed, true)) {
       $message = 'Select a webinar and valid status.';
       $messageTone = 'warning';
     } else {
-      update_webinar_fields($webinarId, ['status' => $status]);
-      if ($status === 'canceled') {
-        $webinar = get_webinar($webinarId);
-        $alreadyCanceled = get_canceled_webinar($webinarId);
-        if (!$alreadyCanceled) {
-          add_canceled_webinar($webinarId, $webinar['title'] ?? 'Webinar');
+      append_json('admin_webinar_actions.json', [
+        'id' => uniqid('admweb_', true),
+        'admin_user_id' => $user['id'] ?? '',
+        'webinar_id' => $webinarId,
+        'action' => $status,
+        'created_at' => date('c')
+      ]);
+      if ($status === 'delete') {
+        if (delete_webinar_and_related($webinarId)) {
+          $message = 'Webinar deleted.';
+        } else {
+          $message = 'Webinar not found.';
+          $messageTone = 'warning';
         }
-        $title = $webinar['title'] ?? 'Webinar';
-        $isPast = false;
-        if (!empty($webinar['datetime'])) {
-          $startTs = strtotime($webinar['datetime']);
-          $durationMinutes = parse_duration_minutes($webinar['duration'] ?? '60 min');
-          $endTs = $startTs ? $startTs + ($durationMinutes * 60) : false;
-          $isPast = $endTs !== false && $endTs < time();
-        }
-        if (!$alreadyCanceled && !$isPast) {
-          $registrations = read_json('registrations.json');
-          $registrations = array_filter($registrations, fn($r) => $r['webinar_id'] === $webinarId);
-          $webinarLink = '/app/webinar.php?id=' . urlencode($webinarId);
-          $hostUser = !empty($webinar['host_id']) ? get_user_by_id($webinar['host_id']) : null;
-          $hostName = full_name($hostUser) ?: 'Webinar host';
-          foreach ($registrations as $registration) {
-            notify_user($registration['user_id'], 'Event canceled: ' . $title, 'webinar', [
-              'webinar_id' => $webinarId,
-              'status' => 'canceled',
-              'title' => $title
-            ]);
-            $attendee = get_user_by_id($registration['user_id']);
-            if (!empty($attendee['email'])) {
-              $displayDatetime = format_datetime_for_user($webinar['datetime'] ?? '', $attendee['timezone'] ?? null);
-              $cancelEmailContext = [
-                'name' => full_name($attendee),
-                'webinar_title' => $title,
-                'webinar_datetime' => $displayDatetime ?: ($webinar['datetime'] ?? ''),
-                'webinar_host' => $hostName,
-                'webinar_link' => $webinarLink,
-                'cancellation_reason' => 'This event was canceled by an administrator.'
-              ];
-              send_email($attendee['email'], 'Event Canceled', 'email_cancellation.html', $cancelEmailContext);
-            }
-            if (function_exists('notifyWebinarCanceled') && sms_opted_in($attendee)) {
-              notifyWebinarCanceled($attendee['phone'], $title);
+      } else {
+        update_webinar_fields($webinarId, ['status' => $status]);
+        if ($status === 'canceled') {
+          $webinar = get_webinar($webinarId);
+          $alreadyCanceled = get_canceled_webinar($webinarId);
+          if (!$alreadyCanceled) {
+            add_canceled_webinar($webinarId, $webinar['title'] ?? 'Webinar');
+          }
+          $title = $webinar['title'] ?? 'Webinar';
+          $isPast = false;
+          if (!empty($webinar['datetime'])) {
+            $startTs = strtotime($webinar['datetime']);
+            $durationMinutes = parse_duration_minutes($webinar['duration'] ?? '60 min');
+            $endTs = $startTs ? $startTs + ($durationMinutes * 60) : false;
+            $isPast = $endTs !== false && $endTs < time();
+          }
+          if (!$alreadyCanceled && !$isPast) {
+            $registrations = read_json('registrations.json');
+            $registrations = array_filter($registrations, fn($r) => $r['webinar_id'] === $webinarId);
+            $webinarLink = '/app/webinar.php?id=' . urlencode($webinarId);
+            $hostUser = !empty($webinar['host_id']) ? get_user_by_id($webinar['host_id']) : null;
+            $hostName = full_name($hostUser) ?: 'Webinar host';
+            foreach ($registrations as $registration) {
+              notify_user($registration['user_id'], 'Event canceled: ' . $title, 'webinar', [
+                'webinar_id' => $webinarId,
+                'status' => 'canceled',
+                'title' => $title
+              ]);
+              $attendee = get_user_by_id($registration['user_id']);
+              if (!empty($attendee['email'])) {
+                $displayDatetime = format_datetime_for_user($webinar['datetime'] ?? '', $attendee['timezone'] ?? null);
+                $cancelEmailContext = [
+                  'name' => full_name($attendee),
+                  'webinar_title' => $title,
+                  'webinar_datetime' => $displayDatetime ?: ($webinar['datetime'] ?? ''),
+                  'webinar_host' => $hostName,
+                  'webinar_link' => $webinarLink,
+                  'cancellation_reason' => 'This event was canceled by an administrator.'
+                ];
+                send_email($attendee['email'], 'Event Canceled', 'email_cancellation.html', $cancelEmailContext);
+              }
+              if (function_exists('notifyWebinarCanceled') && sms_opted_in($attendee)) {
+                notifyWebinarCanceled($attendee['phone'], $title);
+              }
             }
           }
         }
+        $message = 'Webinar status updated.';
       }
-      $message = 'Webinar status updated.';
     }
   }
 
@@ -222,6 +246,25 @@ $filteredPayments = admin_filter_month($payments, 'created_at', $monthFilter);
 $filteredFeedback = admin_filter_month($feedback, 'created_at', $monthFilter);
 $filteredWaitlist = admin_filter_month($waitlist, 'created_at', $monthFilter);
 $filteredCanceled = admin_filter_month($canceled, 'canceled_at', $monthFilter);
+$adminSnapshot = [
+  'filters' => [
+    'month' => $monthFilter
+  ],
+  'users' => $users,
+  'webinars' => $webinars,
+  'registrations' => $registrations,
+  'payments' => $payments,
+  'subscriptions' => $subscriptions,
+  'feedback' => $feedback,
+  'waitlist' => $waitlist,
+  'canceled' => $canceled
+];
+write_json('admin.json', [[
+  'id' => uniqid('admin_', true),
+  'admin_user_id' => $user['id'] ?? '',
+  'snapshot' => $adminSnapshot,
+  'created_at' => date('c')
+]]);
 
 $registrationCounts = [];
 foreach ($filteredRegistrations as $registration) {
