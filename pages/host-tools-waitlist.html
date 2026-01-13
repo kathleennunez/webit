@@ -50,7 +50,7 @@
           <?php $waitUser = $userMap[$entry['user_id']] ?? null; ?>
           <div class="d-flex justify-content-between align-items-center border-top py-2">
             <div>
-              <div class="fw-semibold small"><?php echo sanitize($waitUser['name'] ?? 'Attendee'); ?></div>
+              <div class="fw-semibold small"><?php echo sanitize(full_name($waitUser) ?: 'Attendee'); ?></div>
               <div class="text-muted small"><?php echo sanitize($waitUser['email'] ?? ''); ?></div>
             </div>
             <div class="text-muted small"><?php echo sanitize($entry['created_at'] ?? ''); ?></div>

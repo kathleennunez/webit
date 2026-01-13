@@ -12,7 +12,7 @@
     <div class="d-flex align-items-center gap-3">
       <img src="<?php echo sanitize(avatar_url($profileUser)); ?>" class="avatar-lg" alt="Profile">
       <div>
-        <h5 class="fw-bold mb-1"><?php echo sanitize($profileUser['name'] ?? ''); ?></h5>
+        <h5 class="fw-bold mb-1"><?php echo sanitize(full_name($profileUser)); ?></h5>
         <div class="text-muted"><?php echo sanitize($profileUser['email'] ?? ''); ?></div>
         <?php if (!empty($profileUser['company'])): ?>
           <div class="text-muted small"><?php echo sanitize($profileUser['company']); ?></div>
@@ -126,7 +126,7 @@
           <div class="border-bottom py-3">
             <div class="d-flex align-items-center gap-2 mb-2">
               <img src="<?php echo sanitize(avatar_url($author)); ?>" class="avatar-sm" alt="Attendee">
-              <div class="fw-semibold small"><?php echo sanitize($author['name'] ?? 'Attendee'); ?></div>
+              <div class="fw-semibold small"><?php echo sanitize(full_name($author) ?: 'Attendee'); ?></div>
               <?php if ($entryRating > 0): ?>
                 <div class="star-rating small">
                   <?php for ($i = 1; $i <= 5; $i++): ?>

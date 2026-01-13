@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../php/bootstrap.php';
+require_once __DIR__ . '/../../php/bootstrap.php';
 require_login();
 require_once __DIR__ . '/paypal-client.php';
 

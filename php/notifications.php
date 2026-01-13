@@ -1,4 +1,16 @@
 <?php
+$feedbackSmsPath = BASE_PATH . '/integrations/sms-integration/notifications/feedback_prompt.php';
+if (file_exists($feedbackSmsPath)) {
+  require_once $feedbackSmsPath;
+}
+
+function sms_opted_in(?array $user): bool {
+  if (!$user) {
+    return false;
+  }
+  return !empty($user['phone']) && !empty($user['sms_opt_in']);
+}
+
 function log_notification(string $type, array $payload): void {
   $notifications = read_json('notifications.json');
   $notifications[] = [
@@ -160,6 +172,12 @@ function send_feedback_prompts_for_user(string $userId): void {
       'feedback',
       ['webinar_id' => $webinarId]
     );
+    if (function_exists('notifyFeedbackPrompt')) {
+      $user = get_user_by_id($userId);
+      if (sms_opted_in($user)) {
+        notifyFeedbackPrompt($user['phone'], $webinar['title'] ?? 'your webinar');
+      }
+    }
   }
 }
 

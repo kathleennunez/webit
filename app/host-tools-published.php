@@ -3,6 +3,11 @@ require_once __DIR__ . '/../php/bootstrap.php';
 require_login();
 require_non_admin();
 
+$cancelSmsPath = BASE_PATH . '/integrations/sms-integration/notifications/webinar_canceled.php';
+if (file_exists($cancelSmsPath)) {
+  require_once $cancelSmsPath;
+}
+
 $user = current_user();
 $message = '';
 
@@ -38,6 +43,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           'status' => 'canceled',
           'title' => $title
         ]);
+        if (function_exists('notifyWebinarCanceled')) {
+          $attendee = get_user_by_id($registration['user_id']);
+          if (sms_opted_in($attendee)) {
+            notifyWebinarCanceled($attendee['phone'], $title);
+          }
+        }
       }
     }
     $registrations = array_values(array_filter($registrations, fn($r) => $r['webinar_id'] !== $id));

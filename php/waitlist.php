@@ -1,4 +1,9 @@
 <?php
+$waitlistSmsPath = BASE_PATH . '/integrations/sms-integration/notifications/waitlist_opening.php';
+if (file_exists($waitlistSmsPath)) {
+  require_once $waitlistSmsPath;
+}
+
 function waitlist_entries(): array {
   return read_json('waitlist.json');
 }
@@ -60,6 +65,12 @@ function notify_waitlist_openings(string $webinarId, int $availableSeats, string
       'waitlist',
       ['webinar_id' => $webinarId, 'reason' => $reason]
     );
+    if (function_exists('notifyWaitlistOpening')) {
+      $user = get_user_by_id($userId);
+      if (sms_opted_in($user)) {
+        notifyWaitlistOpening($user['phone'], $title);
+      }
+    }
     $notified++;
   }
   return $notified;

@@ -44,9 +44,20 @@ function update_user_profile(string $userId, array $payload): array {
   $users = read_json('users.json');
   foreach ($users as &$user) {
     if ($user['id'] === $userId) {
-      $user['name'] = $payload['name'] ?? $user['name'];
+      if (array_key_exists('first_name', $payload) || array_key_exists('last_name', $payload)) {
+        $firstName = trim((string)($payload['first_name'] ?? ($user['first_name'] ?? '')));
+        $lastName = trim((string)($payload['last_name'] ?? ($user['last_name'] ?? '')));
+        $user['first_name'] = $firstName;
+        $user['last_name'] = $lastName;
+        $user['name'] = trim($firstName . ' ' . $lastName);
+      }
       $user['email'] = $payload['email'] ?? $user['email'];
-      $user['phone'] = $payload['phone'] ?? ($user['phone'] ?? '');
+      if (array_key_exists('phone', $payload)) {
+        $user['phone'] = normalize_phone_ph((string)$payload['phone']);
+      }
+      if (array_key_exists('sms_opt_in', $payload)) {
+        $user['sms_opt_in'] = !empty($payload['sms_opt_in']);
+      }
       $user['company'] = $payload['company'] ?? ($user['company'] ?? '');
       $user['location'] = $payload['location'] ?? ($user['location'] ?? '');
       $user['timezone'] = $payload['timezone'] ?? ($user['timezone'] ?? '');

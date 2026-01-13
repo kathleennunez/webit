@@ -900,6 +900,14 @@ body {
   background: rgba(136, 156, 245, 0.18);
 }
 
+.iti {
+  width: 100%;
+}
+
+.iti input.form-control {
+  width: 100%;
+}
+
 .input-group-text {
   background: transparent;
   border-color: rgba(136, 156, 245, 0.3);

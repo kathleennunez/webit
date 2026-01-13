@@ -209,6 +209,37 @@ timezonePickers.forEach((picker) => {
   });
 });
 
+const phoneInputs = document.querySelectorAll('[data-phone-input]');
+if (phoneInputs.length && window.intlTelInput) {
+  phoneInputs.forEach((input) => {
+    const storedValue = input.dataset.phoneValue || '';
+    const instance = window.intlTelInput(input, {
+      initialCountry: 'ph',
+      separateDialCode: true,
+      nationalMode: false,
+      autoPlaceholder: 'polite',
+      utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@18.2.1/build/js/utils.js',
+      hiddenInput: 'phone'
+    });
+
+    if (storedValue) {
+      instance.setNumber(storedValue);
+    }
+
+    input.addEventListener('blur', () => {
+      const number = instance.getNumber();
+      if (!number) {
+        return;
+      }
+      const form = input.form;
+      const hidden = form ? form.querySelector('input[name="phone"]') : null;
+      if (hidden) {
+        hidden.value = number;
+      }
+    });
+  });
+}
+
 const timePickers = document.querySelectorAll('[data-time-picker]');
 timePickers.forEach((picker) => {
   const input = picker.querySelector('[data-time-input]');

@@ -281,11 +281,12 @@ if ($export) {
   header('Content-Disposition: attachment; filename="' . $filename . '"');
   $output = fopen('php://output', 'w');
   if ($export === 'users') {
-    fputcsv($output, ['id', 'name', 'email', 'role', 'created_at']);
+    fputcsv($output, ['id', 'first_name', 'last_name', 'email', 'role', 'created_at']);
     foreach ($filteredUsers as $entry) {
       fputcsv($output, [
         $entry['id'] ?? '',
-        $entry['name'] ?? '',
+        $entry['first_name'] ?? '',
+        $entry['last_name'] ?? '',
         $entry['email'] ?? '',
         $entry['role'] ?? '',
         $entry['created_at'] ?? ''

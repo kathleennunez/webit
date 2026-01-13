@@ -1,7 +1,16 @@
 <?php
-require_once __DIR__ . '/../php/bootstrap.php';
+require_once __DIR__ . '/../../php/bootstrap.php';
 require_login();
 require_once __DIR__ . '/paypal-client.php';
+
+$smsSubscriptionPath = BASE_PATH . '/integrations/sms-integration/notifications/subscription_confirmation.php';
+if (file_exists($smsSubscriptionPath)) {
+  require_once $smsSubscriptionPath;
+}
+$smsPaymentPath = BASE_PATH . '/integrations/sms-integration/notifications/payment_received.php';
+if (file_exists($smsPaymentPath)) {
+  require_once $smsPaymentPath;
+}
 
 $user = current_user();
 $payload = json_decode(file_get_contents('php://input'), true);
@@ -67,6 +76,9 @@ try {
       'subscription',
       ['plan' => $plan]
     );
+    if (sms_opted_in($user) && function_exists('notifySubscriptionConfirmed')) {
+      notifySubscriptionConfirmed($user['phone'], full_name($user));
+    }
     echo json_encode(['success' => true]);
     exit;
   }
@@ -96,6 +108,9 @@ try {
         'payment',
         ['webinar_id' => $webinarId]
       );
+      if (sms_opted_in($user) && function_exists('notifyPaymentReceived')) {
+        notifyPaymentReceived($user['phone'], $webinar['title'] ?? 'Webinar', $formatted);
+      }
     }
     echo json_encode(['success' => true]);
     exit;

@@ -5,11 +5,55 @@ $categories = [
   'Education','Business','Wellness','Technology','Growth','Marketing','Design','Leadership','Finance','Health','Productivity','Creative'
 ];
 
-$users = [];
+$users = [
+  [
+    'id' => 'user_admin',
+    'first_name' => 'Admin',
+    'last_name' => 'User',
+    'email' => 'admin@webit.com',
+    'password_hash' => password_hash('password123', PASSWORD_DEFAULT),
+    'role' => 'admin',
+    'interests' => [],
+    'api_token' => bin2hex(random_bytes(12)),
+    'avatar' => '/assets/images/avatar-default.svg',
+    'timezone' => 'UTC',
+    'phone' => '09938956065',
+    'sms_opt_in' => true
+  ],
+  [
+    'id' => 'user_host',
+    'first_name' => 'Host',
+    'last_name' => 'User',
+    'email' => 'host@webit.com',
+    'password_hash' => password_hash('password123', PASSWORD_DEFAULT),
+    'role' => 'member',
+    'interests' => [],
+    'api_token' => bin2hex(random_bytes(12)),
+    'avatar' => '/assets/images/avatar-default.svg',
+    'timezone' => 'UTC',
+    'phone' => '09938956065',
+    'sms_opt_in' => true
+  ],
+  [
+    'id' => 'user_member',
+    'first_name' => 'Member',
+    'last_name' => 'User',
+    'email' => 'user@webit.com',
+    'password_hash' => password_hash('password123', PASSWORD_DEFAULT),
+    'role' => 'member',
+    'interests' => [],
+    'api_token' => bin2hex(random_bytes(12)),
+    'avatar' => '/assets/images/avatar-default.svg',
+    'timezone' => 'UTC',
+    'phone' => '09938956065',
+    'sms_opt_in' => true
+  ]
+];
 for ($i = 1; $i <= 36; $i++) {
   $users[] = [
     'id' => 'user_' . $i,
-    'name' => 'User ' . $i,
+    'first_name' => 'User',
+    'last_name' => (string)$i,
     'email' => 'user' . $i . '@webit.com',
     'password_hash' => password_hash('password123', PASSWORD_DEFAULT),
     'role' => 'member',
@@ -36,7 +80,7 @@ foreach ($categories as $cat) {
       'datetime' => $dt->format('c'),
       'duration' => $durations[$index % count($durations)],
       'category' => $cat,
-      'instructor' => $users[$hostIndex]['name'],
+      'instructor' => trim(($users[$hostIndex]['first_name'] ?? '') . ' ' . ($users[$hostIndex]['last_name'] ?? '')),
       'premium' => ($index % 3 === 0),
       'host_id' => $users[$hostIndex]['id'],
       'capacity' => 150 + ($index % 6) * 25,

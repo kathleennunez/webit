@@ -110,7 +110,7 @@
                   <input class="form-control" name="user_lookup" list="userOptions" placeholder="Type a name or email" data-user-lookup>
                   <datalist id="userOptions">
                     <?php foreach ($users as $entry): ?>
-                      <?php $label = ($entry['name'] ?? 'User') . ' · ' . ($entry['email'] ?? ''); ?>
+                      <?php $label = (full_name($entry) ?: 'User') . ' · ' . ($entry['email'] ?? ''); ?>
                       <option value="<?php echo sanitize($label); ?>"></option>
                     <?php endforeach; ?>
                   </datalist>
@@ -251,7 +251,7 @@
                   <?php $webinar = $webinarsById[$entry['webinar_id'] ?? ''] ?? null; ?>
                   <tr>
                     <td>
-                      <div class="fw-semibold"><?php echo sanitize($attendee['name'] ?? 'Attendee'); ?></div>
+                      <div class="fw-semibold"><?php echo sanitize(full_name($attendee) ?: 'Attendee'); ?></div>
                       <div class="text-muted small"><?php echo sanitize($attendee['email'] ?? ''); ?></div>
                     </td>
                     <td>
@@ -302,7 +302,7 @@
               <?php foreach ($usersPage['items'] as $entry): ?>
                 <div class="d-flex justify-content-between align-items-center border-top py-2">
                   <div>
-                    <div class="fw-semibold small"><?php echo sanitize($entry['name'] ?? 'User'); ?></div>
+                    <div class="fw-semibold small"><?php echo sanitize(full_name($entry) ?: 'User'); ?></div>
                     <div class="text-muted small"><?php echo sanitize($entry['email'] ?? ''); ?></div>
                   </div>
                   <div class="text-muted small"><?php echo sanitize(admin_format_date($entry['created_at'] ?? '')); ?></div>
@@ -420,7 +420,7 @@
                 <?php $userEntry = $usersById[$entry['user_id'] ?? ''] ?? null; ?>
                 <div class="border rounded-4 p-3 mb-3">
                   <div class="d-flex justify-content-between align-items-center mb-2">
-                    <div class="fw-semibold small"><?php echo sanitize($userEntry['name'] ?? 'Member'); ?></div>
+                    <div class="fw-semibold small"><?php echo sanitize(full_name($userEntry) ?: 'Member'); ?></div>
                     <div class="badge-soft"><?php echo sanitize((string)($entry['rating'] ?? 0)); ?>/5</div>
                   </div>
                   <div class="text-muted small"><?php echo sanitize(admin_truncate($entry['content'] ?? '')); ?></div>
@@ -534,7 +534,7 @@
     }
     const userMap = {
       <?php foreach ($users as $entry): ?>
-        "<?php echo sanitize(($entry['name'] ?? 'User') . ' · ' . ($entry['email'] ?? '')); ?>": "<?php echo sanitize($entry['id'] ?? ''); ?>",
+        "<?php echo sanitize((full_name($entry) ?: 'User') . ' · ' . ($entry['email'] ?? '')); ?>": "<?php echo sanitize($entry['id'] ?? ''); ?>",
       <?php endforeach; ?>
     };
     const updateUserId = () => {

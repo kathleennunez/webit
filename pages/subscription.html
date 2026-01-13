@@ -76,13 +76,13 @@
         return;
       }
       window.paypal.Buttons({
-        createOrder: () => fetch('/paypal-integration/create-order.php', {
+        createOrder: () => fetch('/integrations/paypal-integration/create-order.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ type: 'subscription', plan })
         }).then((res) => res.json()).then((data) => data.id),
         onApprove: (data) => {
-          return fetch('/paypal-integration/capture-order.php', {
+          return fetch('/integrations/paypal-integration/capture-order.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ order_id: data.orderID, type: 'subscription' })

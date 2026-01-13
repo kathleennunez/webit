@@ -1,6 +1,6 @@
 <?php
 function paypal_config(): array {
-  $config = file_exists(__DIR__ . '/../config.php') ? require __DIR__ . '/../config.php' : [];
+  $config = file_exists(__DIR__ . '/../../config.php') ? require __DIR__ . '/../../config.php' : [];
   return [
     'client_id' => $config['paypal_client_id'] ?? '',
     'secret' => $config['paypal_secret'] ?? '',

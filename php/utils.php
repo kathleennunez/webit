@@ -104,3 +104,41 @@ function parse_duration_minutes(string $duration): int {
   }
   return 60;
 }
+
+function full_name(?array $user): string {
+  if (!$user) {
+    return '';
+  }
+  $first = trim((string)($user['first_name'] ?? ''));
+  $last = trim((string)($user['last_name'] ?? ''));
+  $combined = trim($first . ' ' . $last);
+  if ($combined !== '') {
+    return $combined;
+  }
+  return trim((string)($user['name'] ?? ''));
+}
+
+function normalize_phone_ph(string $phone): string {
+  $trimmed = trim($phone);
+  if ($trimmed === '') {
+    return '';
+  }
+  if ($trimmed[0] === '+') {
+    $digits = preg_replace('/\D+/', '', $trimmed);
+    if (str_starts_with($digits, '63') && strlen($digits) === 11 && ($digits[2] ?? '') === '9') {
+      return '+63' . '9' . substr($digits, 2);
+    }
+    return '+' . $digits;
+  }
+  $digits = preg_replace('/\D+/', '', $trimmed);
+  if (strlen($digits) === 11 && str_starts_with($digits, '09')) {
+    return '+63' . substr($digits, 1);
+  }
+  if (strlen($digits) === 12 && str_starts_with($digits, '63')) {
+    return '+' . $digits;
+  }
+  if (strlen($digits) === 10 && str_starts_with($digits, '9')) {
+    return '+63' . $digits;
+  }
+  return $trimmed;
+}

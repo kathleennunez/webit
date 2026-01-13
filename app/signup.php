@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../php/bootstrap.php';
+$includeIntlTelInput = true;
 
 if (current_user()) {
   $role = current_user()['role'] ?? '';
@@ -10,14 +11,17 @@ $message = '';
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  $name = trim($_POST['name'] ?? '');
+  $firstName = trim($_POST['first_name'] ?? '');
+  $lastName = trim($_POST['last_name'] ?? '');
   $email = trim($_POST['email'] ?? '');
   $emailNormalized = strtolower($email);
   $password = $_POST['password'] ?? '';
   $confirm = $_POST['confirm_password'] ?? '';
   $timezone = $_POST['timezone'] ?? 'UTC';
+  $phone = normalize_phone_ph($_POST['phone'] ?? '');
+  $smsOptIn = !empty($_POST['sms_opt_in']);
 
-  if (!$name || !$email || !$password) {
+  if (!$firstName || !$lastName || !$email || !$password) {
     $error = 'Please fill out all required fields.';
   } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     $error = 'Please provide a valid email address.';
@@ -38,14 +42,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$error) {
       $newUser = [
         'id' => uniqid('user_', true),
-        'name' => $name,
+        'first_name' => $firstName,
+        'last_name' => $lastName,
         'email' => $emailNormalized,
         'password_hash' => password_hash($password, PASSWORD_DEFAULT),
         'role' => 'member',
         'interests' => [],
         'api_token' => bin2hex(random_bytes(12)),
         'avatar' => '/assets/images/avatar-default.svg',
-        'timezone' => $timezone
+        'timezone' => $timezone,
+        'phone' => $phone,
+        'sms_opt_in' => $smsOptIn
       ];
       $users[] = $newUser;
       write_json('users.json', $users);

@@ -128,7 +128,7 @@
         <div class="border-bottom py-3">
           <div class="d-flex align-items-center gap-2 mb-2">
             <img src="<?php echo sanitize(avatar_url($author)); ?>" class="avatar-sm" alt="Attendee">
-            <div class="fw-semibold small"><?php echo sanitize($author['name'] ?? 'Attendee'); ?></div>
+            <div class="fw-semibold small"><?php echo sanitize(full_name($author) ?: 'Attendee'); ?></div>
             <?php if ($entryRating > 0): ?>
               <div class="star-rating small">
                 <?php for ($i = 1; $i <= 5; $i++): ?>
@@ -271,13 +271,13 @@
   <script>
     if (window.paypal) {
       window.paypal.Buttons({
-        createOrder: () => fetch('/paypal-integration/create-order.php', {
+        createOrder: () => fetch('/integrations/paypal-integration/create-order.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ type: 'webinar', webinar_id: '<?php echo sanitize($id); ?>' })
         }).then((res) => res.json()).then((data) => data.id),
         onApprove: (data) => {
-          return fetch('/paypal-integration/capture-order.php', {
+          return fetch('/integrations/paypal-integration/capture-order.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ order_id: data.orderID, type: 'webinar' })

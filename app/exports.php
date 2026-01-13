@@ -53,7 +53,7 @@ if ($type === 'attendees') {
     fputcsv($output, [
       $webinarId,
       $webinarMap[$webinarId]['title'] ?? '',
-      $attendee['name'] ?? '',
+      full_name($attendee),
       $attendee['email'] ?? '',
       $registration['registered_at'] ?? ''
     ]);
@@ -80,7 +80,7 @@ if ($type === 'waitlist') {
     fputcsv($output, [
       $webinarId,
       $webinarMap[$webinarId]['title'] ?? '',
-      $attendee['name'] ?? '',
+      full_name($attendee),
       $attendee['email'] ?? '',
       $entry['created_at'] ?? ''
     ]);

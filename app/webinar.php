@@ -3,6 +3,16 @@ require_once __DIR__ . '/../php/bootstrap.php';
 require_login();
 require_non_admin();
 
+$smsNotificationFiles = [
+  BASE_PATH . '/integrations/sms-integration/notifications/registration_confirmation.php',
+  BASE_PATH . '/integrations/sms-integration/notifications/waitlist.php'
+];
+foreach ($smsNotificationFiles as $smsFile) {
+  if (file_exists($smsFile)) {
+    require_once $smsFile;
+  }
+}
+
 $user = current_user();
 $id = $_GET['id'] ?? '';
 $webinar = get_webinar($id);
@@ -86,6 +96,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register']) && !$lock
     $registration = register_for_webinar($id, $user['id']);
     send_email($user['email'], 'Registration Confirmed', 'email_registration.html', $registration);
     notify_user($user['id'], 'Registration confirmed for: ' . $webinar['title'], 'registration', ['webinar_id' => $id]);
+    $smsEnabled = function_exists('sms_opted_in') ? sms_opted_in($user) : false;
+    $smsTemplateReady = function_exists('notifyRegistrationConfirmed');
+    if ($smsEnabled && $smsTemplateReady) {
+      notifyRegistrationConfirmed($user['phone'], $webinar['title']);
+    } elseif (function_exists('log_notification')) {
+      log_notification('sms-debug', [
+        'event' => 'registration_confirmation',
+        'user_id' => $user['id'],
+        'phone' => $user['phone'] ?? '',
+        'sms_opt_in' => $user['sms_opt_in'] ?? null,
+        'sms_opted_in' => $smsEnabled,
+        'template_ready' => $smsTemplateReady
+      ]);
+    }
     if ($webinarTime) {
       $oneDay = date('c', strtotime('-1 day', $webinarTime));
       $oneHour = date('c', strtotime('-1 hour', $webinarTime));
@@ -129,6 +153,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['join_waitlist']) && !
     add_waitlist_entry($id, $user['id']);
     $message = 'You have been added to the waitlist.';
     $isWaitlisted = true;
+    if (sms_opted_in($user) && function_exists('notifyWebinarWaitlisted')) {
+      notifyWebinarWaitlisted($user['phone'], $webinar['title']);
+    }
   }
 }
 

@@ -15,7 +15,7 @@ $formData = [
   'start_time' => '',
   'end_time' => '',
   'category' => 'Education',
-  'instructor' => $user['name'],
+  'instructor' => full_name($user),
   'premium' => false,
   'price' => '',
   'capacity' => 0,
@@ -42,7 +42,7 @@ if (!empty($_GET['edit'])) {
     $formData['title'] = $webinar['title'] ?? '';
     $formData['description'] = $webinar['description'] ?? '';
     $formData['category'] = $webinar['category'] ?? 'Education';
-    $formData['instructor'] = $webinar['instructor'] ?? $user['name'];
+    $formData['instructor'] = $webinar['instructor'] ?? full_name($user);
     $formData['premium'] = (bool)($webinar['premium'] ?? false);
     $formData['price'] = $webinar['price'] ?? '';
     $formData['capacity'] = $webinar['capacity'] ?? 0;
@@ -149,7 +149,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_webinar'])) {
         $formData['title'] = $updated['title'] ?? '';
         $formData['description'] = $updated['description'] ?? '';
         $formData['category'] = $updated['category'] ?? 'Education';
-        $formData['instructor'] = $updated['instructor'] ?? $user['name'];
+        $formData['instructor'] = $updated['instructor'] ?? full_name($user);
         $formData['premium'] = (bool)($updated['premium'] ?? false);
         $formData['price'] = $updated['price'] ?? '';
         $formData['meeting_url'] = $updated['meeting_url'] ?? '';

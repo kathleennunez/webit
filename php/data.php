@@ -15,7 +15,8 @@ function ensure_tables(): void {
   $pdo = db_connection();
   $pdo->exec("CREATE TABLE IF NOT EXISTS users (
     id VARCHAR(64) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
+    first_name VARCHAR(255) NULL,
+    last_name VARCHAR(255) NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     role VARCHAR(32) NOT NULL,
@@ -24,6 +25,7 @@ function ensure_tables(): void {
     avatar VARCHAR(255) NOT NULL,
     timezone VARCHAR(64) NOT NULL,
     phone VARCHAR(64) NULL,
+    sms_opt_in TINYINT(1) DEFAULT 0,
     company VARCHAR(255) NULL,
     location VARCHAR(255) NULL,
     bio TEXT NULL,
@@ -141,6 +143,26 @@ function ensure_tables(): void {
     INDEX idx_feedback_user (user_id)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+  $columnsToAdd = [
+    'sms_opt_in' => "ALTER TABLE users ADD COLUMN sms_opt_in TINYINT(1) DEFAULT 0",
+    'first_name' => "ALTER TABLE users ADD COLUMN first_name VARCHAR(255) NULL",
+    'last_name' => "ALTER TABLE users ADD COLUMN last_name VARCHAR(255) NULL"
+  ];
+  foreach ($columnsToAdd as $column => $statement) {
+    $exists = $pdo->query("SHOW COLUMNS FROM users LIKE '$column'")->fetch();
+    if (!$exists) {
+      $pdo->exec($statement);
+    }
+  }
+  $nameColumn = $pdo->query("SHOW COLUMNS FROM users LIKE 'name'")->fetch();
+  if ($nameColumn) {
+    $pdo->exec("UPDATE users
+      SET first_name = IF(first_name IS NULL OR first_name = '', SUBSTRING_INDEX(name, ' ', 1), first_name),
+          last_name = IF(last_name IS NULL OR last_name = '', TRIM(SUBSTRING(name, LOCATE(' ', name) + 1)), last_name)
+      WHERE name IS NOT NULL AND name <> ''");
+    $pdo->exec("ALTER TABLE users DROP COLUMN name");
+  }
+
   $ready = true;
 }
 
@@ -154,6 +176,9 @@ function read_json(string $file): array {
       $rows = $pdo->query('SELECT * FROM users ORDER BY created_at ASC')->fetchAll();
       return array_map(function ($row) {
         $row['interests'] = $row['interests'] ? json_decode($row['interests'], true) : [];
+        $row['sms_opt_in'] = (bool)($row['sms_opt_in'] ?? 0);
+        $row['first_name'] = $row['first_name'] ?? '';
+        $row['last_name'] = $row['last_name'] ?? '';
         return $row;
       }, $rows);
     case 'webinars':
@@ -261,11 +286,12 @@ function write_json(string $file, array $data): void {
   switch ($dataset) {
     case 'users':
       $pdo->exec('DELETE FROM users');
-      $stmt = $pdo->prepare('INSERT INTO users (id, name, email, password_hash, role, interests, api_token, avatar, timezone, phone, company, location, bio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+      $stmt = $pdo->prepare('INSERT INTO users (id, first_name, last_name, email, password_hash, role, interests, api_token, avatar, timezone, phone, sms_opt_in, company, location, bio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
       foreach ($data as $user) {
         $stmt->execute([
           $user['id'] ?? '',
-          $user['name'] ?? '',
+          $user['first_name'] ?? '',
+          $user['last_name'] ?? '',
           $user['email'] ?? '',
           $user['password_hash'] ?? '',
           $user['role'] ?? 'member',
@@ -274,6 +300,7 @@ function write_json(string $file, array $data): void {
           $user['avatar'] ?? '',
           $user['timezone'] ?? 'UTC',
           $user['phone'] ?? null,
+          !empty($user['sms_opt_in']) ? 1 : 0,
           $user['company'] ?? null,
           $user['location'] ?? null,
           $user['bio'] ?? null
@@ -441,10 +468,11 @@ function append_json(string $file, array $item): void {
 
   switch ($dataset) {
     case 'users':
-      $stmt = $pdo->prepare('INSERT INTO users (id, name, email, password_hash, role, interests, api_token, avatar, timezone, phone, company, location, bio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+      $stmt = $pdo->prepare('INSERT INTO users (id, first_name, last_name, email, password_hash, role, interests, api_token, avatar, timezone, phone, sms_opt_in, company, location, bio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
       $stmt->execute([
         $item['id'] ?? '',
-        $item['name'] ?? '',
+        $item['first_name'] ?? '',
+        $item['last_name'] ?? '',
         $item['email'] ?? '',
         $item['password_hash'] ?? '',
         $item['role'] ?? 'member',
@@ -453,6 +481,7 @@ function append_json(string $file, array $item): void {
         $item['avatar'] ?? '',
         $item['timezone'] ?? 'UTC',
         $item['phone'] ?? null,
+        !empty($item['sms_opt_in']) ? 1 : 0,
         $item['company'] ?? null,
         $item['location'] ?? null,
         $item['bio'] ?? null

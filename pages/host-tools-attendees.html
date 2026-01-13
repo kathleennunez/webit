@@ -41,7 +41,7 @@
         <?php foreach ($attendees as $entry): ?>
           <div class="d-flex justify-content-between align-items-center border-top py-2">
             <div>
-              <div class="fw-semibold small"><?php echo sanitize($entry['user']['name'] ?? 'Attendee'); ?></div>
+              <div class="fw-semibold small"><?php echo sanitize(full_name($entry['user'] ?? []) ?: 'Attendee'); ?></div>
               <div class="text-muted small"><?php echo sanitize($entry['user']['email'] ?? ''); ?></div>
             </div>
             <div class="text-muted small"><?php echo sanitize($entry['registration']['registered_at'] ?? ''); ?></div>
