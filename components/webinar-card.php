@@ -1,12 +1,12 @@
 <?php
 $webinar = $webinar ?? [];
 $user = current_user();
-$hostUser = get_user_by_id($webinar['host_id'] ?? '');
+$hostUser = get_user_by_id($webinar['user_id'] ?? '');
 $displayDatetime = format_datetime_for_user($webinar['datetime'] ?? '', $user['timezone'] ?? null);
 $description = $webinar['description'] ?? '';
 $meetingUrl = $webinar['meeting_url'] ?? '';
 $currentPath = $_SERVER['REQUEST_URI'] ?? '/app/home.php';
-$isSaved = $user ? is_webinar_saved($user['id'], $webinar['id'] ?? '') : false;
+$isSaved = $user ? is_webinar_saved($user['user_id'] ?? '', $webinar['id'] ?? '') : false;
 ?>
 <div class="col" data-webinar-card data-title="<?php echo strtolower($webinar['title']); ?>" data-speaker="<?php echo strtolower($webinar['instructor']); ?>" data-category="<?php echo strtolower($webinar['category']); ?>">
   <div class="card glass-panel h-100 card-hover webinar-card">
@@ -29,7 +29,7 @@ $isSaved = $user ? is_webinar_saved($user['id'], $webinar['id'] ?? '') : false;
           <span class="badge bg-warning text-dark">Premium<?php echo isset($webinar['price']) && $webinar['price'] > 0 ? ' • $' . sanitize((string)$webinar['price']) : ''; ?></span>
         <?php endif; ?>
       </div>
-      <a href="/app/webinar.php?id=<?php echo sanitize($webinar['id']); ?>" class="text-decoration-none text-reset card-link">
+      <a href="/app/webinar.php?id=<?php echo sanitize($webinar); ?>" class="text-decoration-none text-reset card-link">
         <h5 class="card-title mb-1"><?php echo sanitize($webinar['title']); ?></h5>
       </a>
       <p class="text-muted mb-3 card-desc"><?php echo sanitize($description); ?></p>

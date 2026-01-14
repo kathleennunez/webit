@@ -4,6 +4,7 @@ require_login();
 require_once __DIR__ . '/paypal-client.php';
 
 $user = current_user();
+$userId = $user['user_id'] ?? '';
 $payload = json_decode(file_get_contents('php://input'), true);
 $type = $payload['type'] ?? '';
 
@@ -21,7 +22,7 @@ if ($type === 'subscription') {
   $plan = $payload['plan'] ?? 'monthly';
   $planKey = strtolower($plan);
   $amount = $planKey === 'yearly' ? 180.00 : 19.00;
-  $customId = 'sub:plan:' . $planKey . '|user:' . $user['id'];
+  $customId = 'sub:plan:' . $planKey . '|user:' . $userId;
   $description = 'WebIT ' . ucfirst($planKey) . ' subscription';
 } elseif ($type === 'webinar') {
   $webinarId = $payload['webinar_id'] ?? '';
@@ -46,12 +47,12 @@ if ($type === 'subscription') {
       exit;
     }
   }
-  if (user_is_registered($webinarId, $user['id'])) {
+  if (user_is_registered($webinarId, $userId)) {
     http_response_code(400);
     echo json_encode(['error' => 'Already registered']);
     exit;
   }
-  if (user_has_registration_conflict($webinarId, $user['id'])) {
+  if (user_has_registration_conflict($webinarId, $userId)) {
     http_response_code(400);
     echo json_encode(['error' => 'Time conflict with another registration']);
     exit;
@@ -62,13 +63,13 @@ if ($type === 'subscription') {
     echo json_encode(['error' => 'Webinar is at capacity']);
     exit;
   }
-  if (has_paid_for_webinar($user['id'], $webinarId)) {
+  if (has_paid_for_webinar($userId, $webinarId)) {
     http_response_code(400);
     echo json_encode(['error' => 'Already paid']);
     exit;
   }
   $amount = (float)($webinar['price'] ?? 0);
-  $customId = 'webinar:' . $webinarId . '|user:' . $user['id'];
+  $customId = 'webinar:' . $webinarId . '|user:' . $userId;
   $description = $webinar['title'] ?? 'Premium webinar';
 } else {
   http_response_code(400);

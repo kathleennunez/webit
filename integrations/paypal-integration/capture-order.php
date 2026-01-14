@@ -13,6 +13,7 @@ if (file_exists($smsPaymentPath)) {
 }
 
 $user = current_user();
+$userId = $user['user_id'] ?? '';
 $payload = json_decode(file_get_contents('php://input'), true);
 $orderId = $payload['order_id'] ?? '';
 $type = $payload['type'] ?? '';
@@ -41,7 +42,7 @@ try {
   }
   $amountValue = (float)($unit['payments']['captures'][0]['amount']['value'] ?? $unit['amount']['value'] ?? 0);
 
-  if (strpos($customId, 'user:' . $user['id']) === false) {
+  if (strpos($customId, 'user:' . $userId) === false) {
     http_response_code(403);
     echo json_encode(['error' => 'User mismatch']);
     exit;
@@ -52,9 +53,9 @@ try {
     if (strpos($customId, 'plan:yearly') !== false) {
       $plan = 'yearly';
     }
-    $existing = get_subscription($user['id']);
+    $existing = get_subscription($userId);
     if (!$existing) {
-      $subscription = create_subscription($user['id'], $plan, 'paypal-sandbox');
+      $subscription = create_subscription($userId, $plan, 'paypal-sandbox');
       $planLabel = ucfirst((string)($subscription['plan'] ?? $plan));
       $renewalAt = format_datetime_for_user($subscription['renewal_at'] ?? '', $user['timezone'] ?? null);
       $subscriptionEmailContext = [
@@ -69,7 +70,7 @@ try {
     } else {
       $subscriptions = read_json('subscriptions.json');
       foreach ($subscriptions as &$entry) {
-        if (($entry['user_id'] ?? '') === $user['id']) {
+        if (($entry['user_id'] ?? '') === $userId) {
           $entry['plan'] = $plan;
           $entry['status'] = 'active';
           $entry['provider'] = 'paypal-sandbox';
@@ -81,7 +82,7 @@ try {
       write_json('subscriptions.json', $subscriptions);
     }
     notify_user(
-      $user['id'],
+      $userId,
       'Subscription payment received for the ' . $plan . ' plan.',
       'subscription',
       ['plan' => $plan]
@@ -104,14 +105,14 @@ try {
       exit;
     }
     $captureId = $unit['payments']['captures'][0]['id'] ?? '';
-    if (!has_paid_for_webinar($user['id'], $webinarId)) {
+    if (!has_paid_for_webinar($userId, $webinarId)) {
       $paymentRecord = log_payment([
         'webinar_id' => $webinarId,
         'amount' => $amountValue,
         'provider' => 'paypal-sandbox',
         'status' => 'captured',
         'capture_id' => $captureId
-      ], $user['id']);
+      ], $userId);
       $webinar = get_webinar($webinarId);
       $formatted = '$' . number_format($amountValue, 2);
       $paymentDate = format_datetime_for_user($paymentRecord['created_at'] ?? '', $user['timezone'] ?? null);
@@ -127,7 +128,7 @@ try {
       ];
       send_email($user['email'], 'Payment Receipt', 'email_payment_receipt.html', $paymentEmailContext);
       notify_user(
-        $user['id'],
+        $userId,
         'Payment received for premium webinar "' . ($webinar['title'] ?? 'Webinar') . '" (' . $formatted . ').',
         'payment',
         ['webinar_id' => $webinarId]
@@ -136,8 +137,8 @@ try {
         notifyPaymentReceived($user['phone'], $webinar['title'] ?? 'Webinar', $formatted);
       }
     }
-    if (!user_is_registered($webinarId, $user['id'])) {
-      register_for_webinar_with_notifications($webinarId, $user['id']);
+    if (!user_is_registered($webinarId, $userId)) {
+      register_for_webinar_with_notifications($webinarId, $userId);
     }
     echo json_encode(['success' => true]);
     exit;

@@ -94,7 +94,7 @@ function register_for_webinar_with_notifications(string $webinarId, string $user
   }
 
   $registration = register_for_webinar($webinarId, $userId);
-  $hostUser = !empty($webinar['host_id']) ? get_user_by_id($webinar['host_id']) : null;
+  $hostUser = !empty($webinar['user_id']) ? get_user_by_id($webinar['user_id']) : null;
   $hostName = full_name($hostUser);
   if ($hostName === '') {
     $hostName = 'Webinar host';

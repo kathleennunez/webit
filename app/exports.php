@@ -7,10 +7,13 @@ $user = current_user();
 $type = $_GET['type'] ?? '';
 $webinarIdFilter = $_GET['webinar_id'] ?? '';
 
-$hostedWebinars = array_values(array_filter(all_webinars(), fn($w) => ($w['host_id'] ?? '') === $user['id']));
+$hostedWebinars = array_values(array_filter(all_webinars(), fn($w) => ($w['user_id'] ?? '') === ($user['user_id'] ?? '')));
 $webinarMap = [];
 foreach ($hostedWebinars as $webinar) {
-  $webinarMap[$webinar['id']] = $webinar;
+  $webinarId = $webinar['id'] ?? '';
+  if ($webinarId) {
+    $webinarMap[$webinarId] = $webinar;
+  }
 }
 
 if (!$type || !in_array($type, ['attendees', 'revenue', 'webinars', 'waitlist'], true)) {
@@ -39,7 +42,10 @@ if ($type === 'attendees') {
   $users = read_json('users.json');
   $userMap = [];
   foreach ($users as $entry) {
-    $userMap[$entry['id']] = $entry;
+    $userId = $entry['user_id'] ?? '';
+    if ($userId) {
+      $userMap[$userId] = $entry;
+    }
   }
   foreach ($registrations as $registration) {
     $webinarId = $registration['webinar_id'] ?? '';
@@ -66,7 +72,10 @@ if ($type === 'waitlist') {
   $users = read_json('users.json');
   $userMap = [];
   foreach ($users as $entry) {
-    $userMap[$entry['id']] = $entry;
+    $userId = $entry['user_id'] ?? '';
+    if ($userId) {
+      $userMap[$userId] = $entry;
+    }
   }
   foreach ($waitlist as $entry) {
     $webinarId = $entry['webinar_id'] ?? '';

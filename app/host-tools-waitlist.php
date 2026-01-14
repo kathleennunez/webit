@@ -4,7 +4,7 @@ require_login();
 require_non_admin();
 
 $user = current_user();
-$hostedWebinars = array_values(array_filter(all_webinars(), fn($w) => ($w['host_id'] ?? '') === $user['id']));
+$hostedWebinars = array_values(array_filter(all_webinars(), fn($w) => ($w['user_id'] ?? '') === ($user['user_id'] ?? '')));
 
 $capacityMap = [];
 foreach ($hostedWebinars as $webinar) {
@@ -22,7 +22,10 @@ foreach ($hostedWebinars as $webinar) {
 $allUsers = read_json('users.json');
 $userMap = [];
 foreach ($allUsers as $entry) {
-  $userMap[$entry['id']] = $entry;
+  $userId = $entry['user_id'] ?? '';
+  if ($userId) {
+    $userMap[$userId] = $entry;
+  }
 }
 
 $waitlist = waitlist_entries();

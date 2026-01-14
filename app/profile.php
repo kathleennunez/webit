@@ -18,7 +18,7 @@ if ($profileId) {
 }
 
 $hostedWebinars = array_values(array_filter(all_webinars(), function ($webinar) use ($profileUser) {
-  return ($webinar['host_id'] ?? '') === ($profileUser['id'] ?? '');
+  return ($webinar['user_id'] ?? '') === ($profileUser['user_id'] ?? '');
 }));
 
 $now = time();
@@ -66,12 +66,12 @@ foreach ($pastEvents as $event) {
   }
 }
 
-$existingFeedback = $selectedEvent ? feedback_by_user($selectedEvent['id'], $viewer['id']) : null;
+$existingFeedback = $selectedEvent ? feedback_by_user($selectedEvent['id'], $viewer['user_id']) : null;
 $canLeaveFeedback = false;
 if ($selectedEvent) {
   $eventTime = strtotime($selectedEvent['datetime'] ?? '');
-  $canLeaveFeedback = user_is_registered($selectedEvent['id'], $viewer['id'])
-    && ($viewer['id'] ?? '') !== ($profileUser['id'] ?? '')
+  $canLeaveFeedback = user_is_registered($selectedEvent['id'], $viewer['user_id'])
+    && ($viewer['user_id'] ?? '') !== ($profileUser['user_id'] ?? '')
     && $eventTime !== false
     && $eventTime < $now
     && !$existingFeedback;
@@ -89,8 +89,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_feedback'])) {
   } elseif ($rating < 1 || $rating > 5) {
     $feedbackError = 'Please select a rating.';
   } else {
-    add_feedback($selectedEvent['id'], $viewer['id'], $content, $rating);
-    $redirect = '/app/profile.php?user_id=' . urlencode($profileUser['id']) . '&event=' . urlencode($selectedEvent['id']);
+    add_feedback($selectedEvent['id'], $viewer['user_id'], $content, $rating);
+    $redirect = '/app/profile.php?user_id=' . urlencode($profileUser['user_id']) . '&event=' . urlencode($selectedEvent['id']);
     redirect_to($redirect);
   }
 }
@@ -98,8 +98,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_feedback'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_feedback'])) {
   $feedbackId = $_POST['feedback_id'] ?? '';
   $webinarId = $selectedEvent['id'] ?? '';
-  delete_feedback($feedbackId, $viewer['id'], $webinarId);
-  $redirect = '/app/profile.php?user_id=' . urlencode($profileUser['id']) . '&event=' . urlencode($selectedEvent['id']);
+  delete_feedback($feedbackId, $viewer['user_id'], $webinarId);
+  $redirect = '/app/profile.php?user_id=' . urlencode($profileUser['user_id']) . '&event=' . urlencode($selectedEvent['id']);
   redirect_to($redirect);
 }
 

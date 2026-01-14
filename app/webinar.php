@@ -18,6 +18,7 @@ if (file_exists($paypalClientPath)) {
 }
 
 $user = current_user();
+$userId = $user['user_id'] ?? '';
 $id = $_GET['id'] ?? '';
 $webinar = get_webinar($id);
 if (!$webinar) {
@@ -34,13 +35,13 @@ if (!$webinar) {
 $locked = false;
 $message = '';
 $error = '';
-$hostUser = get_user_by_id($webinar['host_id'] ?? '');
+$hostUser = get_user_by_id($webinar['user_id'] ?? '');
 $displayDatetime = format_datetime_for_user($webinar['datetime'] ?? '', $user['timezone'] ?? null);
-$alreadyRegistered = user_is_registered($id, $user['id']);
-$conflictWebinar = user_has_registration_conflict($id, $user['id']);
+$alreadyRegistered = user_is_registered($id, $userId);
+$conflictWebinar = user_has_registration_conflict($id, $userId);
 $isPremium = (bool)($webinar['premium'] ?? false);
 $price = (float)($webinar['price'] ?? 0);
-$hasPaid = $isPremium ? has_paid_for_webinar($user['id'], $id) : true;
+$hasPaid = $isPremium ? has_paid_for_webinar($userId, $id) : true;
 $canRefund = $isPremium && $hasPaid;
 $isPublished = ($webinar['status'] ?? 'published') === 'published';
 $webinarTime = strtotime($webinar['datetime'] ?? '');
@@ -52,12 +53,12 @@ $capacityFull = $capacity > 0 && webinar_registration_count($id) >= $capacity;
 $capacityRemaining = $capacity > 0 ? max(0, $capacity - webinar_registration_count($id)) : null;
 $canRegister = !$locked && $hasPaid && !$alreadyRegistered && !$conflictWebinar && !$isPast && $isPublished && !$capacityFull;
 $canPurchase = $isPremium && !$hasPaid && !$alreadyRegistered && !$conflictWebinar && !$isPast && $isPublished && !$capacityFull;
-$isWaitlisted = is_user_waitlisted($id, $user['id']);
+$isWaitlisted = is_user_waitlisted($id, $userId);
 $paypalClientId = $appConfig['paypal_client_id'] ?? '';
 $paymentNotice = !empty($_GET['paid']);
 $canWaitlist = !$locked && !$alreadyRegistered && !$isPast && $isPublished && $capacityFull && !$isWaitlisted
-  && ($webinar['host_id'] ?? '') !== $user['id'];
-$isSaved = is_webinar_saved($user['id'], $id);
+  && ($webinar['user_id'] ?? '') !== $userId;
+$isSaved = is_webinar_saved($userId, $id);
 $registerLabel = 'Register Now';
 $registerHint = '';
 if ($alreadyRegistered) {
@@ -99,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register']) && !$lock
   } elseif ($conflictWebinar) {
     $error = 'This webinar conflicts with your registration for "' . $conflictWebinar['title'] . '".';
   } else {
-    $registration = register_for_webinar_with_notifications($id, $user['id']);
+    $registration = register_for_webinar_with_notifications($id, $userId);
     $message = 'You are registered! A confirmation email has been queued.';
     $alreadyRegistered = true;
     $canRegister = false;
@@ -114,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['unregister']) && !$lo
   } else {
     $refundProcessed = false;
     if ($isPremium && $hasPaid) {
-      $payment = latest_payment_for_webinar($user['id'], $id);
+      $payment = latest_payment_for_webinar($userId, $id);
       $captureId = $payment['capture_id'] ?? '';
       if (!$captureId) {
         $error = 'Unable to refund this payment automatically. Please contact support.';
@@ -134,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['unregister']) && !$lo
     }
 
     if (!$error) {
-      unregister_from_webinar($id, $user['id']);
+      unregister_from_webinar($id, $userId);
       $message = $refundProcessed ? 'You have been unregistered and refunded.' : 'You have been unregistered from this webinar.';
       $alreadyRegistered = false;
       $hasPaid = $isPremium ? false : $hasPaid;
@@ -159,7 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['join_waitlist']) && !
   } elseif ($alreadyRegistered) {
     $error = 'You are already registered for this webinar.';
   } else {
-    add_waitlist_entry($id, $user['id']);
+    add_waitlist_entry($id, $userId);
     $message = 'You have been added to the waitlist.';
     $isWaitlisted = true;
     if (!empty($user['email'])) {
@@ -180,8 +181,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['join_waitlist']) && !
   }
 }
 
-$existingFeedback = feedback_by_user($id, $user['id']);
-$canLeaveFeedback = $isPast && $alreadyRegistered && ($webinar['host_id'] ?? '') !== $user['id'] && !$existingFeedback;
+$existingFeedback = feedback_by_user($id, $userId);
+$canLeaveFeedback = $isPast && $alreadyRegistered && ($webinar['user_id'] ?? '') !== $userId && !$existingFeedback;
 $feedbackMessage = '';
 $feedbackError = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_feedback']) && !$locked) {
@@ -194,19 +195,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_feedback']) &&
   } elseif ($rating < 1 || $rating > 5) {
     $feedbackError = 'Please select a rating.';
   } else {
-    add_feedback($id, $user['id'], $content, $rating);
+    add_feedback($id, $userId, $content, $rating);
     $feedbackMessage = 'Thanks for your feedback!';
-    $existingFeedback = feedback_by_user($id, $user['id']);
+    $existingFeedback = feedback_by_user($id, $userId);
     $canLeaveFeedback = false;
   }
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_feedback']) && !$locked) {
   $feedbackId = $_POST['feedback_id'] ?? '';
-  delete_feedback($feedbackId, $user['id'], $id);
+  delete_feedback($feedbackId, $userId, $id);
   $feedbackMessage = 'Feedback deleted.';
   $existingFeedback = null;
-  $canLeaveFeedback = $isPast && $alreadyRegistered && ($webinar['host_id'] ?? '') !== $user['id'];
+  $canLeaveFeedback = $isPast && $alreadyRegistered && ($webinar['user_id'] ?? '') !== $userId;
 }
 
 $feedbackEntries = $isPast ? feedback_for_webinar($id) : [];

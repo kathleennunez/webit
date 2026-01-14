@@ -4,6 +4,7 @@ require_login();
 require_non_admin();
 
 $user = current_user();
+$userId = $user['user_id'] ?? '';
 $emailMessage = '';
 $emailError = '';
 $passwordMessage = '';
@@ -13,7 +14,7 @@ $deleteError = '';
 $users = read_json('users.json');
 $userIndex = null;
 foreach ($users as $index => $entry) {
-  if (($entry['id'] ?? '') === $user['id']) {
+  if (($entry['user_id'] ?? '') === $userId) {
     $userIndex = $index;
     break;
   }
@@ -38,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $emailError = 'Current password is incorrect.';
     } else {
       foreach ($users as $entry) {
-        if (strtolower($entry['email'] ?? '') === $newEmailNormalized && ($entry['id'] ?? '') !== $user['id']) {
+        if (strtolower($entry['email'] ?? '') === $newEmailNormalized && ($entry['user_id'] ?? '') !== $userId) {
           $emailError = 'Email already exists.';
           break;
         }
@@ -88,13 +89,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$deleteError) {
-      $userId = $user['id'];
       $webinars = read_json('webinars.json');
       $hostedIds = [];
       $remainingWebinars = [];
       foreach ($webinars as $webinar) {
-        if (($webinar['host_id'] ?? '') === $userId) {
-          $hostedIds[] = $webinar['id'];
+        if (($webinar['user_id'] ?? '') === $userId) {
+          $hostedIds[] = $webinar['id'] ?? '';
           continue;
         }
         $remainingWebinars[] = $webinar;
@@ -128,9 +128,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       }));
 
       $canceled = read_json('canceled.json');
-      $canceled = array_values(array_filter($canceled, fn($entry) => !in_array(($entry['id'] ?? ''), $hostedIds, true)));
+      $canceled = array_values(array_filter($canceled, fn($entry) => !in_array(($entry['canceled_id'] ?? ''), $hostedIds, true)));
 
-      $users = array_values(array_filter($users, fn($entry) => ($entry['id'] ?? '') !== $userId));
+      $users = array_values(array_filter($users, fn($entry) => ($entry['user_id'] ?? '') !== $userId));
 
       write_json('webinars.json', $remainingWebinars);
       write_json('registrations.json', $registrations);

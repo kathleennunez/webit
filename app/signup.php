@@ -41,13 +41,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     if (!$error) {
       $newUser = [
-        'id' => uniqid('user_', true),
+        'user_id' => uniqid('user_', true),
         'first_name' => $firstName,
         'last_name' => $lastName,
         'email' => $emailNormalized,
         'password_hash' => password_hash($password, PASSWORD_DEFAULT),
         'role' => 'member',
-        'interests' => [],
         'api_token' => bin2hex(random_bytes(12)),
         'avatar' => '/assets/images/avatar-default.svg',
         'timezone' => $timezone,

@@ -4,7 +4,7 @@ require_login();
 require_non_admin();
 
 $user = current_user();
-$entries = saved_entries_for_user($user['id']);
+$entries = saved_entries_for_user($user['user_id'] ?? '');
 usort($entries, function ($a, $b) {
   return strcmp($b['saved_at'] ?? '', $a['saved_at'] ?? '');
 });

@@ -18,7 +18,7 @@ function logout_user(): void {
 function get_user_by_id(string $userId): ?array {
   $users = read_json('users.json');
   foreach ($users as $user) {
-    if ($user['id'] === $userId) {
+    if (($user['user_id'] ?? '') === $userId) {
       return $user;
     }
   }
@@ -43,7 +43,7 @@ function require_api_token(): array {
 function update_user_profile(string $userId, array $payload): array {
   $users = read_json('users.json');
   foreach ($users as &$user) {
-    if ($user['id'] === $userId) {
+    if (($user['user_id'] ?? '') === $userId) {
       if (array_key_exists('first_name', $payload) || array_key_exists('last_name', $payload)) {
         $firstName = trim((string)($payload['first_name'] ?? ($user['first_name'] ?? '')));
         $lastName = trim((string)($payload['last_name'] ?? ($user['last_name'] ?? '')));
@@ -68,10 +68,6 @@ function update_user_profile(string $userId, array $payload): array {
       $user['location'] = $payload['location'] ?? ($user['location'] ?? '');
       $user['timezone'] = $payload['timezone'] ?? ($user['timezone'] ?? '');
       $user['bio'] = $payload['bio'] ?? ($user['bio'] ?? '');
-      if (isset($payload['interests'])) {
-        $interests = array_map('trim', explode(',', $payload['interests']));
-        $user['interests'] = array_values(array_filter($interests));
-      }
       if (!empty($payload['avatar'])) {
         $user['avatar'] = $payload['avatar'];
       }

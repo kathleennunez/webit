@@ -17,15 +17,15 @@
         <h1 class="h3 fw-bold mb-2"><?php echo sanitize($webinar['title']); ?></h1>
         <div class="d-flex align-items-center gap-2 text-muted">
           <img src="<?php echo sanitize(avatar_url($hostUser)); ?>" class="avatar-sm" alt="Host">
-          <a class="text-decoration-none text-muted" href="/app/profile.php?user_id=<?php echo sanitize($hostUser['id'] ?? ''); ?>">
+          <a class="text-decoration-none text-muted" href="/app/profile.php?user_id=<?php echo sanitize($hostUser['user_id'] ?? ''); ?>">
             Hosted by <?php echo sanitize($webinar['instructor']); ?>
           </a>
         </div>
       </div>
       <div class="d-flex align-items-center gap-2">
         <form method="post" action="/app/save-webinar.php">
-          <input type="hidden" name="webinar_id" value="<?php echo sanitize($webinar['id']); ?>">
-          <input type="hidden" name="redirect" value="/app/webinar.php?id=<?php echo sanitize($webinar['id']); ?>">
+          <input type="hidden" name="webinar_id" value="<?php echo sanitize($webinar); ?>">
+          <input type="hidden" name="redirect" value="/app/webinar.php?id=<?php echo sanitize($webinar); ?>">
           <button class="btn btn-light btn-sm save-btn" type="submit" title="<?php echo $isSaved ? 'Unsave' : 'Save'; ?>">
             <i class="bi bi-bookmark<?php echo $isSaved ? '-fill' : ''; ?>"></i>
           </button>
@@ -139,7 +139,7 @@
               </div>
             <?php endif; ?>
             <div class="text-muted small">• <?php echo sanitize($entry['created_at'] ?? ''); ?></div>
-            <?php if (($entry['user_id'] ?? '') === ($user['id'] ?? '')): ?>
+            <?php if (($entry['user_id'] ?? '') === ($user['user_id'] ?? '')): ?>
               <button class="btn btn-outline-danger btn-sm ms-auto" type="button" data-bs-toggle="modal" data-bs-target="#deleteFeedbackModal" data-feedback-id="<?php echo sanitize($entry['id'] ?? ''); ?>">
                 Delete
               </button>
@@ -260,7 +260,7 @@
         <div class="modal-body">
           <p class="mb-2">Delete your feedback? This cannot be undone.</p>
           <input type="hidden" name="feedback_id" value="" data-feedback-id>
-          <input type="hidden" name="webinar_id" value="<?php echo sanitize($webinar['id']); ?>">
+          <input type="hidden" name="webinar_id" value="<?php echo sanitize($webinar); ?>">
         </div>
         <div class="modal-footer border-0">
           <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Cancel</button>

@@ -48,7 +48,7 @@
       <?php foreach ($futureEvents as $event): ?>
         <?php $eventTime = format_datetime_for_user($event['datetime'] ?? '', $viewer['timezone'] ?? null); ?>
         <div class="col">
-          <a class="text-decoration-none text-reset" href="/app/webinar.php?id=<?php echo sanitize($event['id']); ?>">
+          <a class="text-decoration-none text-reset" href="/app/webinar.php?id=<?php echo sanitize($event); ?>">
             <div class="glass-panel p-3 h-100 card-hover">
               <img src="<?php echo sanitize($event['image'] ?? '/assets/images/webinar-education.svg'); ?>" class="w-100 event-card-thumb mb-3" alt="Event thumbnail">
               <div class="fw-semibold"><?php echo sanitize($event['title']); ?></div>
@@ -69,7 +69,7 @@
       <?php foreach ($pastEvents as $event): ?>
         <?php $eventTime = format_datetime_for_user($event['datetime'] ?? '', $viewer['timezone'] ?? null); ?>
         <div class="col">
-          <a class="text-decoration-none text-reset" href="/app/profile.php?user_id=<?php echo sanitize($profileUser['id']); ?>&event=<?php echo sanitize($event['id']); ?>">
+          <a class="text-decoration-none text-reset" href="/app/profile.php?user_id=<?php echo sanitize($profileUser['user_id']); ?>&event=<?php echo sanitize($event['id']); ?>">
             <div class="glass-panel p-3 h-100 card-hover">
               <img src="<?php echo sanitize($event['image'] ?? '/assets/images/webinar-education.svg'); ?>" class="w-100 event-card-thumb mb-3" alt="Event thumbnail">
               <div class="fw-semibold"><?php echo sanitize($event['title']); ?></div>
@@ -89,7 +89,7 @@
           <h5 class="fw-bold mb-1"><?php echo sanitize($selectedEvent['title']); ?></h5>
           <div class="text-muted small"><?php echo sanitize($eventTime); ?></div>
         </div>
-        <a class="btn btn-outline-primary btn-sm" href="/app/profile.php?user_id=<?php echo sanitize($profileUser['id']); ?>" aria-label="Close details">
+        <a class="btn btn-outline-primary btn-sm" href="/app/profile.php?user_id=<?php echo sanitize($profileUser['user_id']); ?>" aria-label="Close details">
           <i class="bi bi-x"></i>
         </a>
         <?php if (!empty($selectedEvent['category'])): ?>
@@ -135,8 +135,8 @@
                 </div>
               <?php endif; ?>
               <div class="text-muted small">• <?php echo sanitize($entry['created_at'] ?? ''); ?></div>
-              <?php if (($entry['user_id'] ?? '') === ($viewer['id'] ?? '')): ?>
-                <button class="btn btn-outline-danger btn-sm ms-auto" type="button" data-bs-toggle="modal" data-bs-target="#deleteFeedbackModal" data-feedback-id="<?php echo sanitize($entry['id'] ?? ''); ?>">
+              <?php if (($entry['user_id'] ?? '') === ($viewer ?? '')): ?>
+                <button class="btn btn-outline-danger btn-sm ms-auto" type="button" data-bs-toggle="modal" data-bs-target="#deleteFeedbackModal" data-feedback-id="<?php echo sanitize($entry ?? ''); ?>">
                   Delete
                 </button>
               <?php endif; ?>
@@ -203,7 +203,7 @@
           <p class="mb-2">Delete your feedback? This cannot be undone.</p>
           <input type="hidden" name="feedback_id" value="" data-feedback-id>
           <?php if ($selectedEvent): ?>
-            <input type="hidden" name="webinar_id" value="<?php echo sanitize($selectedEvent['id']); ?>">
+            <input type="hidden" name="webinar_id" value="<?php echo sanitize($selectedEvent); ?>">
           <?php endif; ?>
         </div>
         <div class="modal-footer border-0">

@@ -68,7 +68,7 @@ function notify_waitlist_openings(string $webinarId, int $availableSeats, string
     $user = get_user_by_id($userId);
     if (!empty($user['email'])) {
       $displayDatetime = format_datetime_for_user($webinar['datetime'] ?? '', $user['timezone'] ?? null);
-      $hostUser = !empty($webinar['host_id']) ? get_user_by_id($webinar['host_id']) : null;
+      $hostUser = !empty($webinar['user_id']) ? get_user_by_id($webinar['user_id']) : null;
       $hostName = full_name($hostUser) ?: 'Webinar host';
       $webinarLink = '/app/webinar.php?id=' . urlencode($webinarId);
       $waitlistOpenEmailContext = [

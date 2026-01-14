@@ -4,8 +4,8 @@ require_login();
 require_non_admin();
 
 $user = current_user();
-send_feedback_prompts_for_user($user['id']);
-$registrations = user_registrations($user['id']);
+send_feedback_prompts_for_user($user['user_id'] ?? '');
+$registrations = user_registrations($user['user_id'] ?? '');
 $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -63,6 +63,6 @@ while (true) {
   }
 }
 
-$webinars = array_values(array_filter(all_webinars(), fn($w) => ($w['host_id'] ?? '') === $user['id']));
+$webinars = array_values(array_filter(all_webinars(), fn($w) => ($w['user_id'] ?? '') === ($user['user_id'] ?? '')));
 
 include __DIR__ . '/../pages/dashboard.html';

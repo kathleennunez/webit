@@ -96,21 +96,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $message = 'Please add a broadcast message before sending.';
       $messageTone = 'warning';
     } else {
+      $broadcastId = uniqid('bcast_', true);
+      $count = 0;
+      $notificationId = '';
+      foreach ($users as $entry) {
+        if (!empty($entry['user_id'])) {
+          $sentId = notify_user($entry['user_id'], $note, $category, ['broadcast_id' => $broadcastId]);
+          if ($notificationId === '' && $sentId) {
+            $notificationId = $sentId;
+          }
+          $count++;
+        }
+      }
       $broadcast = [
-        'id' => uniqid('bcast_', true),
-        'admin_user_id' => $user['id'] ?? '',
+        'id' => $broadcastId,
+        'admin_id' => $user['user_id'] ?? '',
+        'notification_id' => $notificationId ?: null,
         'message' => $note,
         'category' => $category,
         'created_at' => date('c')
       ];
       append_json('admin_broadcasts.json', $broadcast);
-      $count = 0;
-      foreach ($users as $entry) {
-        if (!empty($entry['id'])) {
-          notify_user($entry['id'], $note, $category, ['broadcast_id' => $broadcast['id']]);
-          $count++;
-        }
-      }
       $message = 'Broadcast sent to ' . $count . ' users.';
     }
   }
@@ -123,14 +129,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $messageTone = 'warning';
     } else {
       foreach ($users as &$entry) {
-        if (($entry['id'] ?? '') === $targetId) {
+        if (($entry['user_id'] ?? '') === $targetId) {
           $entry['role'] = $role;
           break;
         }
       }
       unset($entry);
       write_json('users.json', $users);
-      if (($user['id'] ?? '') === $targetId) {
+      if (($user['user_id'] ?? '') === $targetId) {
         $_SESSION['user']['role'] = $role;
       }
       $message = 'User role updated.';
@@ -146,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
       append_json('admin_webinar_actions.json', [
         'id' => uniqid('admweb_', true),
-        'admin_user_id' => $user['id'] ?? '',
+        'admin_id' => $user['user_id'] ?? '',
         'webinar_id' => $webinarId,
         'action' => $status,
         'created_at' => date('c')
@@ -178,7 +184,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $registrations = read_json('registrations.json');
             $registrations = array_filter($registrations, fn($r) => $r['webinar_id'] === $webinarId);
             $webinarLink = '/app/webinar.php?id=' . urlencode($webinarId);
-            $hostUser = !empty($webinar['host_id']) ? get_user_by_id($webinar['host_id']) : null;
+            $hostUser = !empty($webinar['user_id']) ? get_user_by_id($webinar['user_id']) : null;
             $hostName = full_name($hostUser) ?: 'Webinar host';
             foreach ($registrations as $registration) {
               notify_user($registration['user_id'], 'Event canceled: ' . $title, 'webinar', [
@@ -227,8 +233,8 @@ if (!empty($_GET['month']) && preg_match('/^\\d{4}-\\d{2}$/', $_GET['month'])) {
 
 $usersById = [];
 foreach ($users as $entry) {
-  if (!empty($entry['id'])) {
-    $usersById[$entry['id']] = $entry;
+  if (!empty($entry['user_id'])) {
+    $usersById[$entry['user_id']] = $entry;
   }
 }
 
@@ -259,9 +265,10 @@ $adminSnapshot = [
   'waitlist' => $waitlist,
   'canceled' => $canceled
 ];
-write_json('admin.json', [[
-  'id' => uniqid('admin_', true),
-  'admin_user_id' => $user['id'] ?? '',
+write_json('admin_snapshots.json', [[
+  'snapshot_id' => uniqid('snapshot_', true),
+  'user_id' => $user['user_id'] ?? '',
+  'webinar_id' => null,
   'snapshot' => $adminSnapshot,
   'created_at' => date('c')
 ]]);
@@ -370,10 +377,10 @@ if ($export) {
   header('Content-Disposition: attachment; filename="' . $filename . '"');
   $output = fopen('php://output', 'w');
   if ($export === 'users') {
-    fputcsv($output, ['id', 'first_name', 'last_name', 'email', 'role', 'created_at']);
+    fputcsv($output, ['user_id', 'first_name', 'last_name', 'email', 'role', 'created_at']);
     foreach ($filteredUsers as $entry) {
       fputcsv($output, [
-        $entry['id'] ?? '',
+        $entry['user_id'] ?? '',
         $entry['first_name'] ?? '',
         $entry['last_name'] ?? '',
         $entry['email'] ?? '',
@@ -444,10 +451,10 @@ if ($export) {
       ]);
     }
   } elseif ($export === 'canceled') {
-    fputcsv($output, ['id', 'title', 'canceled_at']);
+    fputcsv($output, ['canceled_id', 'title', 'canceled_at']);
     foreach ($filteredCanceled as $entry) {
       fputcsv($output, [
-        $entry['id'] ?? '',
+        $entry['canceled_id'] ?? '',
         $entry['title'] ?? '',
         $entry['canceled_at'] ?? ''
       ]);

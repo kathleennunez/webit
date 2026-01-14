@@ -4,7 +4,7 @@ require_login();
 require_non_admin();
 
 $user = current_user();
-send_feedback_prompts_for_user($user['id']);
+send_feedback_prompts_for_user($user['user_id'] ?? '');
 $now = time();
 $webinars = array_values(array_filter(all_webinars(), function ($w) use ($now) {
   if (($w['status'] ?? 'published') !== 'published') {

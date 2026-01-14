@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../php/bootstrap.php';
 
 $user = require_api_token();
+$userId = $user['user_id'] ?? '';
 
 $path = trim($_SERVER['PATH_INFO'] ?? '', '/');
 $resource = $path ?: ($_GET['resource'] ?? '');
@@ -19,16 +20,16 @@ switch ($resource) {
       json_response(all_webinars());
     }
     if ($method === 'POST') {
-      $created = create_webinar($payload, $user['id']);
+      $created = create_webinar($payload, $userId);
       json_response($created, 201);
     }
     break;
   case 'registrations':
     if ($method === 'GET') {
-      json_response(user_registrations($user['id']));
+      json_response(user_registrations($userId));
     }
     if ($method === 'POST') {
-      $record = register_for_webinar($payload['webinar_id'] ?? '', $user['id']);
+      $record = register_for_webinar($payload['webinar_id'] ?? '', $userId);
       $webinarId = $payload['webinar_id'] ?? '';
       $webinar = $webinarId ? get_webinar($webinarId) : null;
       $webinarTitle = $webinar ? ($webinar['title'] ?? 'Webinar') : 'Webinar';
@@ -36,8 +37,8 @@ switch ($resource) {
       $displayDatetime = $webinar ? format_datetime_for_user($webinarDatetime, $user['timezone'] ?? null) : '';
       $durationMinutes = $webinar ? parse_duration_minutes($webinar['duration'] ?? '60 min') : 60;
       $hostName = '';
-      if ($webinar && !empty($webinar['host_id'])) {
-        $hostName = full_name(get_user_by_id($webinar['host_id']));
+      if ($webinar && !empty($webinar['user_id'])) {
+        $hostName = full_name(get_user_by_id($webinar['user_id']));
       }
       if ($hostName === '') {
         $hostName = 'Webinar host';
@@ -69,23 +70,23 @@ switch ($resource) {
         'registered_at' => $record['registered_at'] ?? ''
       ];
       send_email($user['email'], 'Webinar Registration Confirmed', 'email_registration.html', $registrationEmailContext);
-      notify_user($user['id'], 'Registration confirmed for your webinar.', 'registration', ['webinar_id' => $payload['webinar_id'] ?? '']);
+      notify_user($userId, 'Registration confirmed for your webinar.', 'registration', ['webinar_id' => $payload['webinar_id'] ?? '']);
       $webinarTime = $webinar ? strtotime($webinar['datetime'] ?? '') : false;
       if ($webinarTime) {
         $oneDay = date('c', strtotime('-1 day', $webinarTime));
         $oneHour = date('c', strtotime('-1 hour', $webinarTime));
-        schedule_reminder($user['id'], 'Reminder: ' . ($webinar['title'] ?? 'Webinar') . ' is tomorrow.', $oneDay, ['webinar_id' => $payload['webinar_id'] ?? '']);
-        schedule_reminder($user['id'], 'Reminder: ' . ($webinar['title'] ?? 'Webinar') . ' starts in 1 hour.', $oneHour, ['webinar_id' => $payload['webinar_id'] ?? '']);
+        schedule_reminder($userId, 'Reminder: ' . ($webinar['title'] ?? 'Webinar') . ' is tomorrow.', $oneDay, ['webinar_id' => $payload['webinar_id'] ?? '']);
+        schedule_reminder($userId, 'Reminder: ' . ($webinar['title'] ?? 'Webinar') . ' starts in 1 hour.', $oneHour, ['webinar_id' => $payload['webinar_id'] ?? '']);
       }
       json_response($record, 201);
     }
     break;
   case 'subscriptions':
     if ($method === 'GET') {
-      json_response(get_subscription($user['id']) ?? []);
+      json_response(get_subscription($userId) ?? []);
     }
     if ($method === 'POST') {
-      $sub = create_subscription($user['id'], $payload['plan'] ?? 'monthly');
+      $sub = create_subscription($userId, $payload['plan'] ?? 'monthly');
       $planLabel = ucfirst((string)($sub['plan'] ?? 'monthly'));
       $renewalAt = format_datetime_for_user($sub['renewal_at'] ?? '', $user['timezone'] ?? null);
       $subscriptionEmailContext = [
@@ -98,7 +99,7 @@ switch ($resource) {
       ];
       send_email($user['email'], 'Subscription Activated', 'email_subscription.html', $subscriptionEmailContext);
       notify_user(
-        $user['id'],
+        $userId,
         'Subscription payment received for the ' . ($payload['plan'] ?? 'monthly') . ' plan.',
         'subscription',
         ['plan' => $payload['plan'] ?? 'monthly']
@@ -111,7 +112,7 @@ switch ($resource) {
       $attendance = read_json('attendance.json');
       $record = [
         'id' => uniqid('att_', true),
-        'user_id' => $user['id'],
+        'user_id' => $userId,
         'webinar_id' => $payload['webinar_id'] ?? '',
         'status' => $payload['status'] ?? 'attended',
         'timestamp' => date('c')
@@ -124,7 +125,7 @@ switch ($resource) {
     break;
   case 'payments':
     if ($method === 'POST') {
-      $record = log_payment($payload, $user['id']);
+      $record = log_payment($payload, $userId);
       $webinarId = $record['webinar_id'] ?? '';
       if ($webinarId) {
         $webinar = get_webinar($webinarId);
@@ -143,7 +144,7 @@ switch ($resource) {
         ];
         send_email($user['email'], 'Payment Receipt', 'email_payment_receipt.html', $paymentEmailContext);
         notify_user(
-          $user['id'],
+          $userId,
           'Payment received for premium webinar "' . ($webinar['title'] ?? 'Webinar') . '" (' . $formatted . ').',
           'payment',
           ['webinar_id' => $webinarId]

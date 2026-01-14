@@ -1,0 +1,69 @@
+[
+    {
+        "snapshot_id": "snapshot_696729e030aa21.92519710",
+        "user_id": "user_696669c62752b6.06229269",
+        "webinar_id": null,
+        "snapshot": {
+            "filters": {
+                "month": ""
+            },
+            "users": [
+                {
+                    "user_id": "user_696669c62752b6.06229269",
+                    "email": "admin@webit.com",
+                    "password_hash": "$2y$12$532WhEFlnF.DNnqhuF1QveJFYSetQuodWtgeqmImz5eRCzkpih13m",
+                    "role": "admin",
+                    "api_token": "bc25fba75bcfbbfb986c2bc1",
+                    "avatar": "/assets/images/avatar-default.svg",
+                    "timezone": "Asia/Manila",
+                    "phone": "+639938956065",
+                    "company": null,
+                    "location": null,
+                    "bio": null,
+                    "created_at": "2026-01-14 13:04:54",
+                    "sms_opt_in": true,
+                    "first_name": "Webit",
+                    "last_name": "Admin",
+                    "timezone_id": 255
+                },
+                {
+                    "user_id": "user_696723f624f581.70625050",
+                    "email": "user@webit.com",
+                    "password_hash": "$2y$12$XIQPES1XvPaIC/sKcJ9c7eTp.s5VVu0oLIvgbZ0gJ0ovpq/TBU.Cm",
+                    "role": "member",
+                    "api_token": "b1f2a19fec4f027b08c36110",
+                    "avatar": "/assets/images/avatar-default.svg",
+                    "timezone": "Asia/Manila",
+                    "phone": "+639938956065",
+                    "company": null,
+                    "location": null,
+                    "bio": null,
+                    "created_at": "2026-01-14 13:04:54",
+                    "sms_opt_in": true,
+                    "first_name": "Webit",
+                    "last_name": "User",
+                    "timezone_id": 255
+                }
+            ],
+            "webinars": [],
+            "registrations": [],
+            "payments": [],
+            "subscriptions": [
+                {
+                    "subscription_id": "sub_69666c09b18f81.67692441",
+                    "user_id": "user_696669c62752b6.06229269",
+                    "plan": "yearly",
+                    "status": "active",
+                    "created_at": "2026-01-13T16:00:09+00:00",
+                    "renewal_at": "2027-01-13T16:00:09+00:00",
+                    "provider": "paypal-sandbox",
+                    "id": "sub_69666c09b18f81.67692441"
+                }
+            ],
+            "feedback": [],
+            "waitlist": [],
+            "canceled": []
+        },
+        "created_at": "2026-01-14T05:30:08+00:00"
+    }
+]

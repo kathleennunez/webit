@@ -2,7 +2,7 @@
 <?php $currentPage = basename($_SERVER['PHP_SELF'] ?? ''); ?>
 <?php $currentCategory = $_GET['category'] ?? ''; ?>
 <?php if ($user): ?>
-  <?php send_feedback_prompts_for_user($user['id']); ?>
+  <?php send_feedback_prompts_for_user($user['user_id'] ?? ''); ?>
 <?php endif; ?>
 <?php
 function nav_active(string $path, string $currentPage): string {
@@ -18,6 +18,14 @@ function category_active(string $category, string $currentPage, string $currentC
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>webIT.</title>
+  <script>
+    (function () {
+      const stored = localStorage.getItem('webit-theme');
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = stored || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
@@ -58,8 +66,8 @@ function category_active(string $category, string $currentPage, string $currentC
       <div class="d-flex align-items-center gap-3 <?php echo $showSearch ? '' : 'ms-auto'; ?>">
         <?php if ($user): ?>
           <?php
-            $notificationCount = notification_count($user['id']);
-            $notificationItems = user_notifications($user['id'], 4);
+            $notificationCount = notification_count($user['user_id'] ?? '');
+            $notificationItems = user_notifications($user['user_id'] ?? '', 4);
           ?>
           <?php if (($user['role'] ?? '') !== 'admin'): ?>
             <a class="btn btn-outline-primary btn-sm <?php echo nav_active('create-webinar.php', $currentPage); ?>" href="/app/create-webinar.php" title="Create">

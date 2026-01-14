@@ -43,7 +43,7 @@ if ($normalizedDigits !== '') {
         $userPhone = (string)($user['phone'] ?? '');
         $userDigits = preg_replace('/\D+/', '', $userPhone);
         if ($userDigits && $userDigits === $normalizedDigits) {
-            $userId = $user['id'] ?? null;
+            $userId = $user['user_id'] ?? null;
             break;
         }
     }
@@ -75,7 +75,7 @@ if ($message !== '') {
     $phoneValue = $normalizedFrom !== '' ? $normalizedFrom : $from;
 
     $pdo = db_connection();
-    $stmt = $pdo->prepare('INSERT INTO sms_feedback (id, user_id, webinar_id, phone, message, raw_payload, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)');
+    $stmt = $pdo->prepare('INSERT INTO sms_feedback (sms_feedback_id, user_id, webinar_id, phone, message, raw_payload, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)');
     $stmt->execute([
         uniqid('smsfb_', true),
         $userId,

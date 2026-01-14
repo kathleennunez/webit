@@ -4,19 +4,25 @@ require_login();
 require_non_admin();
 
 $user = current_user();
-$hostedWebinars = array_values(array_filter(all_webinars(), fn($w) => ($w['host_id'] ?? '') === $user['id']));
+$hostedWebinars = array_values(array_filter(all_webinars(), fn($w) => ($w['user_id'] ?? '') === ($user['user_id'] ?? '')));
 
 $registrations = read_json('registrations.json');
 $userMap = [];
 $allUsers = read_json('users.json');
 foreach ($allUsers as $entry) {
-  $userMap[$entry['id']] = $entry;
+  $userId = $entry['user_id'] ?? '';
+  if ($userId) {
+    $userMap[$userId] = $entry;
+  }
 }
 
 $attendeeGroups = [];
 $capacityMap = [];
 foreach ($hostedWebinars as $webinar) {
-  $webinarId = $webinar['id'];
+  $webinarId = $webinar['id'] ?? '';
+  if (!$webinarId) {
+    continue;
+  }
   $attendees = array_values(array_filter($registrations, fn($r) => ($r['webinar_id'] ?? '') === $webinarId));
   $attendeeDetails = [];
   foreach ($attendees as $registration) {

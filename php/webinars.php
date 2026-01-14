@@ -24,7 +24,7 @@ function create_webinar(array $payload, string $hostId): array {
     'instructor' => $payload['instructor'] ?? 'Host',
     'premium' => (bool)($payload['premium'] ?? false),
     'price' => isset($payload['price']) ? (float)$payload['price'] : 0,
-    'host_id' => $hostId,
+    'user_id' => $hostId,
     'capacity' => (int)($payload['capacity'] ?? 100),
     'popularity' => (int)($payload['popularity'] ?? 0),
     'image' => $payload['image'] ?? '/assets/images/webinar-education.svg',
@@ -81,7 +81,7 @@ function delete_webinar_and_related(string $id): bool {
     }
   }
   $canceled = read_json('canceled.json');
-  $filteredCanceled = array_values(array_filter($canceled, fn($row) => ($row['id'] ?? '') !== $id));
+  $filteredCanceled = array_values(array_filter($canceled, fn($row) => ($row['canceled_id'] ?? '') !== $id));
   if (count($filteredCanceled) !== count($canceled)) {
     write_json('canceled.json', $filteredCanceled);
   }
@@ -90,10 +90,10 @@ function delete_webinar_and_related(string $id): bool {
 
 function add_canceled_webinar(string $id, string $title): void {
   $canceled = read_json('canceled.json');
-  $exists = array_filter($canceled, fn($entry) => ($entry['id'] ?? '') === $id);
+  $exists = array_filter($canceled, fn($entry) => ($entry['canceled_id'] ?? '') === $id);
   if (!$exists) {
     $canceled[] = [
-      'id' => $id,
+      'canceled_id' => $id,
       'title' => $title,
       'canceled_at' => date('c')
     ];
@@ -104,7 +104,7 @@ function add_canceled_webinar(string $id, string $title): void {
 function get_canceled_webinar(string $id): ?array {
   $canceled = read_json('canceled.json');
   foreach ($canceled as $entry) {
-    if (($entry['id'] ?? '') === $id) {
+    if (($entry['canceled_id'] ?? '') === $id) {
       return $entry;
     }
   }

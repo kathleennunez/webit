@@ -4,7 +4,7 @@ require_login();
 require_non_admin();
 
 $user = current_user();
-$registrations = user_registrations($user['id']);
+$registrations = user_registrations($user['user_id'] ?? '');
 $now = time();
 $history = [];
 foreach ($registrations as $registration) {

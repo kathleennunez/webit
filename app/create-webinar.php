@@ -4,7 +4,7 @@ require_login();
 require_non_admin();
 
 $user = current_user();
-$hasSubscription = has_active_subscription($user['id']);
+$hasSubscription = has_active_subscription($user['user_id'] ?? '');
 $message = '';
 $error = '';
 $editing = false;
@@ -161,7 +161,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_webinar'])) {
         }
       }
     } else {
-      create_webinar($payload, $user['id']);
+      create_webinar($payload, $user['user_id'] ?? '');
       $message = $payload['status'] === 'draft' ? 'Draft saved.' : 'Webinar published.';
     }
   }

@@ -16,15 +16,17 @@ function sms_opted_in(?array $user): bool {
   return !empty($user['phone']) && !empty($user['sms_opt_in']);
 }
 
-function log_notification(string $type, array $payload): void {
+function log_notification(string $type, array $payload): string {
   $notifications = read_json('notifications.json');
+  $id = uniqid('note_', true);
   $notifications[] = [
-    'id' => uniqid('note_', true),
+    'id' => $id,
     'type' => $type,
     'payload' => $payload,
     'created_at' => date('c')
   ];
   write_json('notifications.json', $notifications);
+  return $id;
 }
 
 function send_email(string $to, string $subject, string $template, array $context = []): void {
@@ -62,8 +64,8 @@ function send_sms(string $to, string $message): void {
   log_notification('sms', ['to' => $to, 'message' => $message]);
 }
 
-function notify_user(string $userId, string $message, string $category = 'general', array $meta = []): void {
-  log_notification('in-app', [
+function notify_user(string $userId, string $message, string $category = 'general', array $meta = []): string {
+  return log_notification('in-app', [
     'user_id' => $userId,
     'message' => $message,
     'category' => $category,
@@ -185,7 +187,7 @@ function send_feedback_prompts_for_user(string $userId): void {
     if (!$webinar) {
       continue;
     }
-    if (($webinar['host_id'] ?? '') === $userId) {
+    if (($webinar['user_id'] ?? '') === $userId) {
       continue;
     }
     $ts = strtotime($webinar['datetime'] ?? '');
@@ -205,7 +207,7 @@ function send_feedback_prompts_for_user(string $userId): void {
       }
     }
     if (!empty($user['email'])) {
-      $hostUser = !empty($webinar['host_id']) ? get_user_by_id($webinar['host_id']) : null;
+      $hostUser = !empty($webinar['user_id']) ? get_user_by_id($webinar['user_id']) : null;
       $hostName = full_name($hostUser) ?: 'Webinar host';
       $webinarLink = '/app/webinar.php?id=' . urlencode($webinarId);
       $feedbackEmailContext = [

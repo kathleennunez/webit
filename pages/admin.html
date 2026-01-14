@@ -535,7 +535,7 @@
     }
     const userMap = {
       <?php foreach ($users as $entry): ?>
-        "<?php echo sanitize((full_name($entry) ?: 'User') . ' · ' . ($entry['email'] ?? '')); ?>": "<?php echo sanitize($entry['id'] ?? ''); ?>",
+        "<?php echo sanitize((full_name($entry) ?: 'User') . ' · ' . ($entry['email'] ?? '')); ?>": "<?php echo sanitize($entry['user_id'] ?? ''); ?>",
       <?php endforeach; ?>
     };
     const updateUserId = () => {

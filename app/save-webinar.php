@@ -4,14 +4,15 @@ require_login();
 require_non_admin();
 
 $user = current_user();
+$userId = $user['user_id'] ?? '';
 $webinarId = $_POST['webinar_id'] ?? '';
 $redirect = $_POST['redirect'] ?? '/app/home.php';
 
 if ($webinarId) {
-  if (is_webinar_saved($user['id'], $webinarId)) {
-    remove_saved_webinar($user['id'], $webinarId);
+  if (is_webinar_saved($userId, $webinarId)) {
+    remove_saved_webinar($userId, $webinarId);
   } else {
-    save_webinar_for_user($user['id'], $webinarId);
+    save_webinar_for_user($userId, $webinarId);
   }
 }
 

@@ -72,10 +72,6 @@
           </div>
         </div>
         </div>
-        <div class="mb-3">
-          <label class="form-label">Interests (comma separated)</label>
-          <input class="form-control" name="interests" value="<?php echo sanitize(implode(', ', $profileUser['interests'] ?? [])); ?>">
-        </div>
         <div class="mb-4">
           <label class="form-label">Bio</label>
           <textarea class="form-control" name="bio" rows="4"><?php echo sanitize($profileUser['bio'] ?? ''); ?></textarea>

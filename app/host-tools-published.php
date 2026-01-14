@@ -11,7 +11,7 @@ if (file_exists($cancelSmsPath)) {
 $user = current_user();
 $message = '';
 
-$hostedWebinars = array_values(array_filter(all_webinars(), fn($w) => ($w['host_id'] ?? '') === $user['id']));
+$hostedWebinars = array_values(array_filter(all_webinars(), fn($w) => ($w['user_id'] ?? '') === ($user['user_id'] ?? '')));
 $publishedWebinars = array_values(array_filter($hostedWebinars, fn($w) => ($w['status'] ?? 'published') === 'published'));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -75,9 +75,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $payments = array_values(array_filter($payments, fn($p) => $p['webinar_id'] !== $id));
     write_json('payments.json', $payments);
     $webinars = all_webinars();
-    $webinars = array_values(array_filter($webinars, fn($w) => $w['id'] !== $id));
+    $webinars = array_values(array_filter($webinars, fn($w) => ($w['id'] ?? '') !== $id));
     write_json('webinars.json', $webinars);
-    $hostedWebinars = array_values(array_filter($webinars, fn($w) => ($w['host_id'] ?? '') === $user['id']));
+    $hostedWebinars = array_values(array_filter($webinars, fn($w) => ($w['user_id'] ?? '') === ($user['user_id'] ?? '')));
     $publishedWebinars = array_values(array_filter($hostedWebinars, fn($w) => ($w['status'] ?? 'published') === 'published'));
     $message = 'Webinar deleted.';
   }

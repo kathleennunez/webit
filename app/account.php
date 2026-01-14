@@ -6,7 +6,8 @@ require_non_admin();
 $includeIntlTelInput = true;
 
 $user = current_user();
-$freshUser = $user ? get_user_by_id($user['id']) : null;
+$userId = $user['user_id'] ?? '';
+$freshUser = $userId ? get_user_by_id($userId) : null;
 if ($freshUser) {
   $_SESSION['user'] = $freshUser;
   $user = $freshUser;
@@ -23,11 +24,11 @@ if (!empty($_GET['user_id'])) {
   $profile = get_user_by_id($_GET['user_id']);
   if ($profile) {
     $profileUser = $profile;
-    $isSelf = $profileUser['id'] === $user['id'];
+    $isSelf = ($profileUser['user_id'] ?? '') === ($user['user_id'] ?? '');
   }
 }
 
-if (!get_user_by_id($user['id'])) {
+if (!$userId || !get_user_by_id($userId)) {
   logout_user();
   redirect_to('/app/login.php');
 }
@@ -45,7 +46,7 @@ if ($isSelf && $_SERVER['REQUEST_METHOD'] === 'POST') {
       $payload['avatar'] = '/uploads/avatars/' . $filename;
     }
   }
-  $profileUser = update_user_profile($user['id'], $payload);
+  $profileUser = update_user_profile($userId, $payload);
   $message = 'Account updated.';
 }
 

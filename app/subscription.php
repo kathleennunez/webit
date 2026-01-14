@@ -4,7 +4,7 @@ require_login();
 require_non_admin();
 
 $user = current_user();
-$subscription = get_subscription($user['id']);
+$subscription = get_subscription($user['user_id'] ?? '');
 $paypalClientId = $appConfig['paypal_client_id'] ?? '';
 $paymentNotice = !empty($_GET['paid']);
 

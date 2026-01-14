@@ -6,10 +6,10 @@ $pdo = db_connection();
 $startMin = date('Y-m-d H:i:s', strtotime('+59 minutes'));
 $startMax = date('Y-m-d H:i:s', strtotime('+61 minutes'));
 $stmt = $pdo->prepare("
-    SELECT u.id, u.phone, u.email, u.first_name, u.last_name, u.timezone, u.sms_opt_in, w.id AS webinar_id, w.title, w.datetime
+    SELECT u.user_id, u.phone, u.email, u.first_name, u.last_name, u.timezone, u.sms_opt_in, w.webinar_id AS webinar_id, w.title, w.datetime
     FROM registrations r
-    JOIN users u ON r.user_id = u.id
-    JOIN webinars w ON r.webinar_id = w.id
+    JOIN users u ON r.user_id = u.user_id
+    JOIN webinars w ON r.webinar_id = w.webinar_id
     WHERE w.datetime BETWEEN :start_min AND :start_max
 ");
 $stmt->execute([
@@ -45,10 +45,10 @@ foreach ($stmt->fetchAll() as $row) {
 $dayMin = date('Y-m-d H:i:s', strtotime('+23 hours 59 minutes'));
 $dayMax = date('Y-m-d H:i:s', strtotime('+24 hours 1 minute'));
 $stmtDay = $pdo->prepare("
-    SELECT u.id, u.email, u.first_name, u.last_name, u.timezone, w.id AS webinar_id, w.title, w.datetime
+    SELECT u.user_id, u.email, u.first_name, u.last_name, u.timezone, w.webinar_id AS webinar_id, w.title, w.datetime
     FROM registrations r
-    JOIN users u ON r.user_id = u.id
-    JOIN webinars w ON r.webinar_id = w.id
+    JOIN users u ON r.user_id = u.user_id
+    JOIN webinars w ON r.webinar_id = w.webinar_id
     WHERE w.datetime BETWEEN :start_min AND :start_max
       AND u.email IS NOT NULL
 ");
