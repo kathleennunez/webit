@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/../php/bootstrap.php';
 require_login();
-require_non_admin();
 
 $cancelSmsPath = BASE_PATH . '/integrations/sms-integration/notifications/webinar_canceled.php';
 if (file_exists($cancelSmsPath)) {
@@ -10,15 +9,40 @@ if (file_exists($cancelSmsPath)) {
 
 $user = current_user();
 $message = '';
+$order = ($_GET['order'] ?? 'latest') === 'oldest' ? 'oldest' : 'latest';
+$orderLabel = $order === 'latest' ? 'Latest to oldest' : 'Oldest to latest';
+$orderParams = $_GET;
+$orderParams['order'] = $order === 'latest' ? 'oldest' : 'latest';
+$orderParams['page'] = 1;
+$orderLink = ($_SERVER['PHP_SELF'] ?? '') . '?' . http_build_query($orderParams);
 
 $hostedWebinars = array_values(array_filter(all_webinars(), fn($w) => ($w['user_id'] ?? '') === ($user['user_id'] ?? '')));
+$sortByCreated = function (array $a, array $b) use ($order): int {
+  $aTs = strtotime($a['created_at'] ?? '') ?: (strtotime($a['datetime'] ?? '') ?: 0);
+  $bTs = strtotime($b['created_at'] ?? '') ?: (strtotime($b['datetime'] ?? '') ?: 0);
+  $cmp = $aTs <=> $bTs;
+  if ($cmp === 0) {
+    $cmp = strcmp((string)($a['id'] ?? ''), (string)($b['id'] ?? ''));
+  }
+  return $order === 'latest' ? -$cmp : $cmp;
+};
+usort($hostedWebinars, $sortByCreated);
 $publishedWebinars = array_values(array_filter($hostedWebinars, fn($w) => ($w['status'] ?? 'published') === 'published'));
+usort($publishedWebinars, $sortByCreated);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  $isAjax = ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest';
   if (isset($_POST['unpublish_webinar'])) {
     $id = $_POST['webinar_id'] ?? '';
     update_webinar_fields($id, ['status' => 'draft']);
-    $message = 'Webinar moved to drafts.';
+    if ($isAjax) {
+      json_response(['ok' => true, 'redirect' => '/app/drafts.php']);
+    }
+    redirect_to('/app/drafts.php');
+    $hostedWebinars = array_values(array_filter(all_webinars(), fn($w) => ($w['user_id'] ?? '') === ($user['user_id'] ?? '')));
+    usort($hostedWebinars, $sortByCreated);
+    $publishedWebinars = array_values(array_filter($hostedWebinars, fn($w) => ($w['status'] ?? 'published') === 'published'));
+    usort($publishedWebinars, $sortByCreated);
   }
   if (isset($_POST['delete_webinar'])) {
     $id = $_POST['webinar_id'] ?? '';
@@ -78,7 +102,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $webinars = array_values(array_filter($webinars, fn($w) => ($w['id'] ?? '') !== $id));
     write_json('webinars.json', $webinars);
     $hostedWebinars = array_values(array_filter($webinars, fn($w) => ($w['user_id'] ?? '') === ($user['user_id'] ?? '')));
+    usort($hostedWebinars, $sortByCreated);
     $publishedWebinars = array_values(array_filter($hostedWebinars, fn($w) => ($w['status'] ?? 'published') === 'published'));
+    usort($publishedWebinars, $sortByCreated);
     $message = 'Webinar deleted.';
   }
 }

@@ -6,6 +6,7 @@ require_non_admin();
 $includeIntlTelInput = true;
 
 $user = current_user();
+$backLink = previous_page_link('/app/dashboard.php');
 $userId = $user['user_id'] ?? '';
 $freshUser = $userId ? get_user_by_id($userId) : null;
 if ($freshUser) {

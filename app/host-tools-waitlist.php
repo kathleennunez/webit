@@ -1,10 +1,31 @@
 <?php
 require_once __DIR__ . '/../php/bootstrap.php';
 require_login();
-require_non_admin();
 
 $user = current_user();
+$order = ($_GET['order'] ?? 'latest') === 'oldest' ? 'oldest' : 'latest';
+$orderLabel = $order === 'latest' ? 'Latest to oldest' : 'Oldest to latest';
+$orderParams = $_GET;
+$orderParams['order'] = $order === 'latest' ? 'oldest' : 'latest';
+$orderParams['page'] = 1;
+$orderLink = ($_SERVER['PHP_SELF'] ?? '') . '?' . http_build_query($orderParams);
+$page = max(1, (int)($_GET['page'] ?? 1));
+$perPage = 10;
 $hostedWebinars = array_values(array_filter(all_webinars(), fn($w) => ($w['user_id'] ?? '') === ($user['user_id'] ?? '')));
+$publishedWebinars = array_values(array_filter($hostedWebinars, fn($w) => ($w['status'] ?? 'published') === 'published'));
+$hostedWebinars = $publishedWebinars;
+usort($hostedWebinars, function ($a, $b) use ($order) {
+  $aTs = strtotime($a['created_at'] ?? '') ?: (strtotime($a['datetime'] ?? '') ?: 0);
+  $bTs = strtotime($b['created_at'] ?? '') ?: (strtotime($b['datetime'] ?? '') ?: 0);
+  $cmp = $aTs <=> $bTs;
+  if ($cmp === 0) {
+    $cmp = strcmp((string)($a['id'] ?? ''), (string)($b['id'] ?? ''));
+  }
+  return $order === 'latest' ? -$cmp : $cmp;
+});
+$totalPages = max(1, (int)ceil(count($hostedWebinars) / $perPage));
+$page = min($page, $totalPages);
+$pagedWebinars = array_slice($hostedWebinars, ($page - 1) * $perPage, $perPage);
 
 $capacityMap = [];
 foreach ($hostedWebinars as $webinar) {

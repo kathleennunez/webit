@@ -12,20 +12,35 @@ if ($expectedToken) {
     }
 }
 
-$payload = file_get_contents('php://input');
-$data = json_decode($payload, true);
+$rawPayload = file_get_contents('php://input');
+$data = json_decode($rawPayload, true);
+if (!is_array($data)) {
+    if (!empty($_POST)) {
+        $data = $_POST;
+    } else {
+        $parsed = [];
+        parse_str($rawPayload, $parsed);
+        $data = $parsed ?: null;
+    }
+}
 if (!is_array($data)) {
     http_response_code(400);
     echo 'Invalid payload';
     exit;
 }
 
-$from = (string)($data['from'] ?? '');
-$textBody = (string)($data['text'] ?? '');
+$from = (string)($data['from'] ?? $data['phone'] ?? $data['phoneNumber'] ?? '');
+$textBody = (string)($data['text'] ?? $data['message'] ?? $data['body'] ?? '');
+if (isset($data['textMessage']) && is_array($data['textMessage'])) {
+    $textBody = (string)($data['textMessage']['text'] ?? $textBody);
+}
 if (isset($data['event'], $data['payload']) && is_array($data['payload'])) {
     $payload = $data['payload'];
-    $from = (string)($payload['phoneNumber'] ?? $from);
-    $textBody = (string)($payload['message'] ?? $textBody);
+    $from = (string)($payload['phoneNumber'] ?? $payload['from'] ?? $payload['phone'] ?? $from);
+    $textBody = (string)($payload['message'] ?? $payload['text'] ?? $payload['body'] ?? $textBody);
+    if (isset($payload['textMessage']) && is_array($payload['textMessage'])) {
+        $textBody = (string)($payload['textMessage']['text'] ?? $textBody);
+    }
 }
 $text = strtoupper(trim($textBody));
 $message = trim($textBody);
@@ -74,6 +89,7 @@ if ($message !== '') {
     $createdAt = date('Y-m-d H:i:s');
     $phoneValue = $normalizedFrom !== '' ? $normalizedFrom : $from;
 
+    ensure_tables();
     $pdo = db_connection();
     $stmt = $pdo->prepare('INSERT INTO sms_feedback (sms_feedback_id, user_id, webinar_id, phone, message, raw_payload, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)');
     $stmt->execute([

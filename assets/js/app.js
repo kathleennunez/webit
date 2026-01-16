@@ -129,6 +129,106 @@ likeForms.forEach((form) => {
   });
 });
 
+const unpublishForms = document.querySelectorAll('[data-unpublish-form]');
+unpublishForms.forEach((form) => {
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const button = form.querySelector('button[type="submit"]') || form.querySelector('button');
+    if (button) {
+      button.disabled = true;
+    }
+    const formData = new FormData(form);
+    try {
+      const response = await fetch(form.action || window.location.href, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData
+      });
+      if (response.ok) {
+        let payload = null;
+        try {
+          payload = await response.json();
+        } catch (error) {
+          payload = null;
+        }
+        if (payload?.redirect) {
+          window.location.href = payload.redirect;
+          return;
+        }
+        const row = form.closest('[data-webinar-row]');
+        if (row) {
+          row.remove();
+        }
+        const list = document.querySelector('[data-webinar-list]');
+        if (list) {
+          const remaining = list.querySelectorAll('[data-webinar-row]').length;
+          const emptyState = list.querySelector('[data-empty-state]');
+          if (emptyState) {
+            emptyState.classList.toggle('d-none', remaining !== 0);
+          }
+        }
+      } else if (button) {
+        button.disabled = false;
+      }
+    } catch (error) {
+      if (button) {
+        button.disabled = false;
+      }
+    }
+  });
+});
+
+const loadingForms = document.querySelectorAll('[data-loading-form]');
+loadingForms.forEach((form) => {
+  form.addEventListener('submit', (event) => {
+    if (form.dataset.loadingSubmitted === 'true') {
+      return;
+    }
+    const submitter = event.submitter;
+    const button =
+      submitter && submitter.tagName === 'BUTTON'
+        ? submitter
+        : form.querySelector('button[type="submit"]');
+    if (!button) {
+      return;
+    }
+    event.preventDefault();
+    const spinner =
+      button.querySelector('[data-loading-spinner]') ||
+      (() => {
+        const created = document.createElement('span');
+        created.className = 'spinner-border spinner-border-sm ms-2 d-none loading-spinner';
+        created.setAttribute('role', 'status');
+        created.setAttribute('aria-hidden', 'true');
+        created.dataset.loadingSpinner = 'true';
+        button.appendChild(created);
+        return created;
+      })();
+    spinner.classList.add('loading-spinner');
+    spinner.classList.remove('d-none');
+    button.disabled = true;
+    button.classList.add('is-loading');
+    form.setAttribute('aria-busy', 'true');
+    form.dataset.loadingSubmitted = 'true';
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        if (submitter && typeof form.requestSubmit === 'function') {
+          form.requestSubmit(submitter);
+          return;
+        }
+        if (submitter && submitter.name) {
+          const hidden = document.createElement('input');
+          hidden.type = 'hidden';
+          hidden.name = submitter.name;
+          hidden.value = submitter.value || '1';
+          form.appendChild(hidden);
+        }
+        form.submit();
+      }, 40);
+    });
+  });
+});
+
 const commentForms = document.querySelectorAll('[data-comment-form]');
 commentForms.forEach((form) => {
   form.addEventListener('submit', async (event) => {
@@ -171,6 +271,60 @@ commentForms.forEach((form) => {
       if (input) {
         input.classList.add('is-invalid');
       }
+    }
+  });
+});
+
+document.querySelectorAll('[data-notification-link]').forEach((link) => {
+  link.addEventListener('click', () => {
+    const noteId = link.getAttribute('data-notification-id');
+    if (!noteId) {
+      return;
+    }
+    const params = new URLSearchParams({ notification_id: noteId });
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon('/app/mark-notification.php', params);
+      return;
+    }
+    fetch('/app/mark-notification.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: params.toString(),
+      keepalive: true
+    }).catch(() => {});
+  });
+});
+
+const saveForms = document.querySelectorAll('.save-form');
+saveForms.forEach((form) => {
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const button = form.querySelector('.save-btn');
+    const icon = button?.querySelector('i');
+    const formData = new FormData(form);
+    try {
+      const response = await fetch(form.action, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData
+      });
+      if (!response.ok) {
+        return;
+      }
+      const payload = await response.json();
+      const saved = !!payload?.saved;
+      if (icon) {
+        icon.classList.toggle('bi-bookmark-fill', saved);
+        icon.classList.toggle('bi-bookmark', !saved);
+      }
+      if (button) {
+        button.setAttribute('title', saved ? 'Unsave' : 'Save');
+      }
+    } catch (error) {
+      form.submit();
     }
   });
 });
@@ -226,6 +380,13 @@ if (phoneInputs.length && window.intlTelInput) {
       instance.setNumber(storedValue);
     }
 
+    const enforcePhoneLimit = () => {
+      const digits = input.value.replace(/\D+/g, '');
+      if (digits.length > 10) {
+        input.value = digits.slice(0, 10);
+      }
+    };
+
     const syncPhoneValue = () => {
       const number = instance.getNumber();
       if (!number) {
@@ -240,6 +401,7 @@ if (phoneInputs.length && window.intlTelInput) {
 
     input.addEventListener('blur', syncPhoneValue);
     input.addEventListener('change', syncPhoneValue);
+    input.addEventListener('input', enforcePhoneLimit);
     if (input.form) {
       input.form.addEventListener('submit', syncPhoneValue);
     }

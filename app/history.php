@@ -4,6 +4,7 @@ require_login();
 require_non_admin();
 
 $user = current_user();
+$backLink = previous_page_link('/app/home.php');
 $registrations = user_registrations($user['user_id'] ?? '');
 $now = time();
 $history = [];
@@ -18,5 +19,11 @@ foreach ($registrations as $registration) {
   }
   $history[] = $webinar;
 }
+
+usort($history, function ($a, $b) {
+  $aTs = strtotime($a['created_at'] ?? '') ?: (strtotime($a['datetime'] ?? '') ?: 0);
+  $bTs = strtotime($b['created_at'] ?? '') ?: (strtotime($b['datetime'] ?? '') ?: 0);
+  return $bTs <=> $aTs;
+});
 
 include __DIR__ . '/../pages/history.html';

@@ -119,6 +119,7 @@ function ensure_tables(): void {
   }
   $pdo->exec("CREATE TABLE IF NOT EXISTS users (
     user_id VARCHAR(64) PRIMARY KEY,
+    alaehscape_user_id INT UNSIGNED NULL,
     first_name VARCHAR(255) NULL,
     last_name VARCHAR(255) NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
@@ -175,9 +176,14 @@ function ensure_tables(): void {
     user_id VARCHAR(64) NOT NULL,
     registered_at DATETIME NOT NULL,
     status VARCHAR(32) NOT NULL,
+    notification_id VARCHAR(64) NULL,
     INDEX idx_reg_webinar (webinar_id),
     INDEX idx_reg_user (user_id)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+  $registrationNotification = $pdo->query("SHOW COLUMNS FROM registrations LIKE 'notification_id'")->fetch();
+  if (!$registrationNotification) {
+    $pdo->exec("ALTER TABLE registrations ADD COLUMN notification_id VARCHAR(64) NULL");
+  }
 
   $pdo->exec("CREATE TABLE IF NOT EXISTS subscriptions (
     subscription_id VARCHAR(64) PRIMARY KEY,
@@ -187,8 +193,13 @@ function ensure_tables(): void {
     created_at DATETIME NOT NULL,
     renewal_at DATETIME NOT NULL,
     provider VARCHAR(32) NOT NULL,
+    notification_id VARCHAR(64) NULL,
     INDEX idx_sub_user (user_id)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+  $subscriptionNotification = $pdo->query("SHOW COLUMNS FROM subscriptions LIKE 'notification_id'")->fetch();
+  if (!$subscriptionNotification) {
+    $pdo->exec("ALTER TABLE subscriptions ADD COLUMN notification_id VARCHAR(64) NULL");
+  }
 
   $pdo->exec("CREATE TABLE IF NOT EXISTS payments (
     payment_id VARCHAR(64) PRIMARY KEY,
@@ -201,9 +212,14 @@ function ensure_tables(): void {
     refund_id VARCHAR(128) NULL,
     refunded_at DATETIME NULL,
     created_at DATETIME NOT NULL,
+    notification_id VARCHAR(64) NULL,
     INDEX idx_pay_webinar (webinar_id),
     INDEX idx_pay_user (user_id)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+  $paymentNotification = $pdo->query("SHOW COLUMNS FROM payments LIKE 'notification_id'")->fetch();
+  if (!$paymentNotification) {
+    $pdo->exec("ALTER TABLE payments ADD COLUMN notification_id VARCHAR(64) NULL");
+  }
 
   $pdo->exec("CREATE TABLE IF NOT EXISTS notifications (
     notification_id VARCHAR(64) PRIMARY KEY,
@@ -296,9 +312,14 @@ function ensure_tables(): void {
     webinar_id VARCHAR(64) NOT NULL,
     user_id VARCHAR(64) NOT NULL,
     created_at DATETIME NOT NULL,
+    notification_id VARCHAR(64) NULL,
     INDEX idx_waitlist_webinar (webinar_id),
     INDEX idx_waitlist_user (user_id)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+  $waitlistNotification = $pdo->query("SHOW COLUMNS FROM waitlist LIKE 'notification_id'")->fetch();
+  if (!$waitlistNotification) {
+    $pdo->exec("ALTER TABLE waitlist ADD COLUMN notification_id VARCHAR(64) NULL");
+  }
 
   $pdo->exec("CREATE TABLE IF NOT EXISTS feedback (
     feedback_id VARCHAR(64) PRIMARY KEY,
@@ -307,9 +328,14 @@ function ensure_tables(): void {
     content TEXT NOT NULL,
     rating TINYINT NOT NULL,
     created_at DATETIME NOT NULL,
+    notification_id VARCHAR(64) NULL,
     INDEX idx_feedback_webinar (webinar_id),
     INDEX idx_feedback_user (user_id)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+  $feedbackNotification = $pdo->query("SHOW COLUMNS FROM feedback LIKE 'notification_id'")->fetch();
+  if (!$feedbackNotification) {
+    $pdo->exec("ALTER TABLE feedback ADD COLUMN notification_id VARCHAR(64) NULL");
+  }
 
   $pdo->exec("CREATE TABLE IF NOT EXISTS sms_feedback (
     sms_feedback_id VARCHAR(64) PRIMARY KEY,
@@ -376,6 +402,7 @@ function ensure_tables(): void {
 
   $defaultTimezoneId = ensure_timezone_id($pdo, 'UTC');
   $columnsToAdd = [
+    'alaehscape_user_id' => "ALTER TABLE users ADD COLUMN alaehscape_user_id INT UNSIGNED NULL",
     'sms_opt_in' => "ALTER TABLE users ADD COLUMN sms_opt_in TINYINT(1) DEFAULT 0",
     'first_name' => "ALTER TABLE users ADD COLUMN first_name VARCHAR(255) NULL",
     'last_name' => "ALTER TABLE users ADD COLUMN last_name VARCHAR(255) NULL",
@@ -386,6 +413,10 @@ function ensure_tables(): void {
     if (!$exists) {
       $pdo->exec($statement);
     }
+  }
+  $alaehscapeColumn = $pdo->query("SHOW COLUMNS FROM users LIKE 'alaehscape_user_id'")->fetch();
+  if ($alaehscapeColumn && stripos((string)$alaehscapeColumn['Type'], 'int') === false) {
+    $pdo->exec('ALTER TABLE users MODIFY alaehscape_user_id INT UNSIGNED NULL');
   }
   $timezoneColumn = $pdo->query("SHOW COLUMNS FROM users LIKE 'timezone'")->fetch();
   if ($timezoneColumn) {
@@ -639,15 +670,16 @@ function write_json(string $file, array $data): void {
       $pdo->exec('DELETE FROM users');
       $hasTimezoneColumn = $pdo->query("SHOW COLUMNS FROM users LIKE 'timezone'")->fetch();
       if ($hasTimezoneColumn) {
-        $stmt = $pdo->prepare('INSERT INTO users (user_id, first_name, last_name, email, password_hash, role, api_token, avatar, timezone_id, timezone, phone, sms_opt_in, company, location, bio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        $stmt = $pdo->prepare('INSERT INTO users (user_id, alaehscape_user_id, first_name, last_name, email, password_hash, role, api_token, avatar, timezone_id, timezone, phone, sms_opt_in, company, location, bio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
       } else {
-        $stmt = $pdo->prepare('INSERT INTO users (user_id, first_name, last_name, email, password_hash, role, api_token, avatar, timezone_id, phone, sms_opt_in, company, location, bio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        $stmt = $pdo->prepare('INSERT INTO users (user_id, alaehscape_user_id, first_name, last_name, email, password_hash, role, api_token, avatar, timezone_id, phone, sms_opt_in, company, location, bio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
       }
       foreach ($data as $user) {
         $timezoneValue = $user['timezone'] ?? 'UTC';
         $timezoneId = ensure_timezone_id($pdo, $timezoneValue);
         $values = [
           $user['user_id'] ?? '',
+          $user['alaehscape_user_id'] ?? null,
           $user['first_name'] ?? '',
           $user['last_name'] ?? '',
           $user['email'] ?? '',
@@ -670,7 +702,7 @@ function write_json(string $file, array $data): void {
       break;
     case 'webinars':
       $pdo->exec('DELETE FROM webinars');
-      $stmt = $pdo->prepare('INSERT INTO webinars (webinar_id, title, description, datetime, duration, category_id, instructor, premium, price, user_id, capacity, popularity, image, meeting_url, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+      $stmt = $pdo->prepare('INSERT INTO webinars (webinar_id, title, description, datetime, duration, category_id, instructor, premium, price, user_id, capacity, popularity, image, meeting_url, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
       foreach ($data as $webinar) {
         $categoryId = ensure_category_id($pdo, $webinar['category'] ?? null);
         $stmt->execute([
@@ -688,26 +720,28 @@ function write_json(string $file, array $data): void {
           (int)($webinar['popularity'] ?? 0),
           $webinar['image'] ?? null,
           $webinar['meeting_url'] ?? null,
-          $webinar['status'] ?? 'published'
+          $webinar['status'] ?? 'published',
+          !empty($webinar['created_at']) ? date('Y-m-d H:i:s', strtotime($webinar['created_at'])) : date('Y-m-d H:i:s')
         ]);
       }
       break;
     case 'registrations':
       $pdo->exec('DELETE FROM registrations');
-      $stmt = $pdo->prepare('INSERT INTO registrations (registration_id, webinar_id, user_id, registered_at, status) VALUES (?, ?, ?, ?, ?)');
+      $stmt = $pdo->prepare('INSERT INTO registrations (registration_id, webinar_id, user_id, registered_at, status, notification_id) VALUES (?, ?, ?, ?, ?, ?)');
       foreach ($data as $row) {
         $stmt->execute([
           $row['id'] ?? '',
           $row['webinar_id'] ?? '',
           $row['user_id'] ?? '',
           !empty($row['registered_at']) ? date('Y-m-d H:i:s', strtotime($row['registered_at'])) : date('Y-m-d H:i:s'),
-          $row['status'] ?? 'registered'
+          $row['status'] ?? 'registered',
+          $row['notification_id'] ?? null
         ]);
       }
       break;
     case 'subscriptions':
       $pdo->exec('DELETE FROM subscriptions');
-      $stmt = $pdo->prepare('INSERT INTO subscriptions (subscription_id, user_id, plan, status, created_at, renewal_at, provider) VALUES (?, ?, ?, ?, ?, ?, ?)');
+      $stmt = $pdo->prepare('INSERT INTO subscriptions (subscription_id, user_id, plan, status, created_at, renewal_at, provider, notification_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
       foreach ($data as $row) {
         $stmt->execute([
           $row['id'] ?? '',
@@ -716,7 +750,8 @@ function write_json(string $file, array $data): void {
           $row['status'] ?? 'active',
           !empty($row['created_at']) ? date('Y-m-d H:i:s', strtotime($row['created_at'])) : date('Y-m-d H:i:s'),
           !empty($row['renewal_at']) ? date('Y-m-d H:i:s', strtotime($row['renewal_at'])) : date('Y-m-d H:i:s'),
-          $row['provider'] ?? 'paypal'
+          $row['provider'] ?? 'paypal',
+          $row['notification_id'] ?? null
         ]);
       }
       break;
@@ -735,7 +770,7 @@ function write_json(string $file, array $data): void {
       break;
     case 'payments':
       $pdo->exec('DELETE FROM payments');
-      $stmt = $pdo->prepare('INSERT INTO payments (payment_id, user_id, webinar_id, amount, provider, status, capture_id, refund_id, refunded_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+      $stmt = $pdo->prepare('INSERT INTO payments (payment_id, user_id, webinar_id, amount, provider, status, capture_id, refund_id, refunded_at, created_at, notification_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
       foreach ($data as $row) {
         $stmt->execute([
           $row['id'] ?? '',
@@ -747,7 +782,8 @@ function write_json(string $file, array $data): void {
           $row['capture_id'] ?? null,
           $row['refund_id'] ?? null,
           !empty($row['refunded_at']) ? date('Y-m-d H:i:s', strtotime($row['refunded_at'])) : null,
-          !empty($row['created_at']) ? date('Y-m-d H:i:s', strtotime($row['created_at'])) : date('Y-m-d H:i:s')
+          !empty($row['created_at']) ? date('Y-m-d H:i:s', strtotime($row['created_at'])) : date('Y-m-d H:i:s'),
+          $row['notification_id'] ?? null
         ]);
       }
       break;
@@ -838,19 +874,20 @@ function write_json(string $file, array $data): void {
       break;
     case 'waitlist':
       $pdo->exec('DELETE FROM waitlist');
-      $stmt = $pdo->prepare('INSERT INTO waitlist (waitlist_id, webinar_id, user_id, created_at) VALUES (?, ?, ?, ?)');
+      $stmt = $pdo->prepare('INSERT INTO waitlist (waitlist_id, webinar_id, user_id, created_at, notification_id) VALUES (?, ?, ?, ?, ?)');
       foreach ($data as $row) {
         $stmt->execute([
           $row['id'] ?? '',
           $row['webinar_id'] ?? '',
           $row['user_id'] ?? '',
-          !empty($row['created_at']) ? date('Y-m-d H:i:s', strtotime($row['created_at'])) : date('Y-m-d H:i:s')
+          !empty($row['created_at']) ? date('Y-m-d H:i:s', strtotime($row['created_at'])) : date('Y-m-d H:i:s'),
+          $row['notification_id'] ?? null
         ]);
       }
       break;
     case 'feedback':
       $pdo->exec('DELETE FROM feedback');
-      $stmt = $pdo->prepare('INSERT INTO feedback (feedback_id, webinar_id, user_id, content, rating, created_at) VALUES (?, ?, ?, ?, ?, ?)');
+      $stmt = $pdo->prepare('INSERT INTO feedback (feedback_id, webinar_id, user_id, content, rating, created_at, notification_id) VALUES (?, ?, ?, ?, ?, ?, ?)');
       foreach ($data as $row) {
         $stmt->execute([
           $row['id'] ?? '',
@@ -858,7 +895,8 @@ function write_json(string $file, array $data): void {
           $row['user_id'] ?? '',
           $row['content'] ?? '',
           (int)($row['rating'] ?? 0),
-          !empty($row['created_at']) ? date('Y-m-d H:i:s', strtotime($row['created_at'])) : date('Y-m-d H:i:s')
+          !empty($row['created_at']) ? date('Y-m-d H:i:s', strtotime($row['created_at'])) : date('Y-m-d H:i:s'),
+          $row['notification_id'] ?? null
         ]);
       }
       break;
@@ -884,14 +922,15 @@ function append_json(string $file, array $item): void {
     case 'users':
       $hasTimezoneColumn = $pdo->query("SHOW COLUMNS FROM users LIKE 'timezone'")->fetch();
       if ($hasTimezoneColumn) {
-        $stmt = $pdo->prepare('INSERT INTO users (user_id, first_name, last_name, email, password_hash, role, api_token, avatar, timezone_id, timezone, phone, sms_opt_in, company, location, bio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        $stmt = $pdo->prepare('INSERT INTO users (user_id, alaehscape_user_id, first_name, last_name, email, password_hash, role, api_token, avatar, timezone_id, timezone, phone, sms_opt_in, company, location, bio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
       } else {
-        $stmt = $pdo->prepare('INSERT INTO users (user_id, first_name, last_name, email, password_hash, role, api_token, avatar, timezone_id, phone, sms_opt_in, company, location, bio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        $stmt = $pdo->prepare('INSERT INTO users (user_id, alaehscape_user_id, first_name, last_name, email, password_hash, role, api_token, avatar, timezone_id, phone, sms_opt_in, company, location, bio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
       }
       $timezoneValue = $item['timezone'] ?? 'UTC';
       $timezoneId = ensure_timezone_id($pdo, $timezoneValue);
       $values = [
         $item['user_id'] ?? '',
+        $item['alaehscape_user_id'] ?? null,
         $item['first_name'] ?? '',
         $item['last_name'] ?? '',
         $item['email'] ?? '',
@@ -912,7 +951,7 @@ function append_json(string $file, array $item): void {
       $stmt->execute($values);
       break;
     case 'webinars':
-      $stmt = $pdo->prepare('INSERT INTO webinars (webinar_id, title, description, datetime, duration, category_id, instructor, premium, price, user_id, capacity, popularity, image, meeting_url, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+      $stmt = $pdo->prepare('INSERT INTO webinars (webinar_id, title, description, datetime, duration, category_id, instructor, premium, price, user_id, capacity, popularity, image, meeting_url, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
       $categoryId = ensure_category_id($pdo, $item['category'] ?? null);
       $stmt->execute([
         $item['id'] ?? '',
@@ -929,21 +968,23 @@ function append_json(string $file, array $item): void {
         (int)($item['popularity'] ?? 0),
         $item['image'] ?? null,
         $item['meeting_url'] ?? null,
-        $item['status'] ?? 'published'
+        $item['status'] ?? 'published',
+        !empty($item['created_at']) ? date('Y-m-d H:i:s', strtotime($item['created_at'])) : date('Y-m-d H:i:s')
       ]);
       break;
     case 'registrations':
-      $stmt = $pdo->prepare('INSERT INTO registrations (registration_id, webinar_id, user_id, registered_at, status) VALUES (?, ?, ?, ?, ?)');
+      $stmt = $pdo->prepare('INSERT INTO registrations (registration_id, webinar_id, user_id, registered_at, status, notification_id) VALUES (?, ?, ?, ?, ?, ?)');
       $stmt->execute([
         $item['id'] ?? '',
         $item['webinar_id'] ?? '',
         $item['user_id'] ?? '',
         !empty($item['registered_at']) ? date('Y-m-d H:i:s', strtotime($item['registered_at'])) : date('Y-m-d H:i:s'),
-        $item['status'] ?? 'registered'
+        $item['status'] ?? 'registered',
+        $item['notification_id'] ?? null
       ]);
       break;
     case 'subscriptions':
-      $stmt = $pdo->prepare('INSERT INTO subscriptions (subscription_id, user_id, plan, status, created_at, renewal_at, provider) VALUES (?, ?, ?, ?, ?, ?, ?)');
+      $stmt = $pdo->prepare('INSERT INTO subscriptions (subscription_id, user_id, plan, status, created_at, renewal_at, provider, notification_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
       $stmt->execute([
         $item['id'] ?? '',
         $item['user_id'] ?? '',
@@ -951,7 +992,8 @@ function append_json(string $file, array $item): void {
         $item['status'] ?? 'active',
         !empty($item['created_at']) ? date('Y-m-d H:i:s', strtotime($item['created_at'])) : date('Y-m-d H:i:s'),
         !empty($item['renewal_at']) ? date('Y-m-d H:i:s', strtotime($item['renewal_at'])) : date('Y-m-d H:i:s'),
-        $item['provider'] ?? 'paypal'
+        $item['provider'] ?? 'paypal',
+        $item['notification_id'] ?? null
       ]);
       break;
     case 'attendance':
@@ -965,7 +1007,7 @@ function append_json(string $file, array $item): void {
       ]);
       break;
     case 'payments':
-      $stmt = $pdo->prepare('INSERT INTO payments (payment_id, user_id, webinar_id, amount, provider, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)');
+      $stmt = $pdo->prepare('INSERT INTO payments (payment_id, user_id, webinar_id, amount, provider, status, created_at, notification_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
       $stmt->execute([
         $item['id'] ?? '',
         $item['user_id'] ?? '',
@@ -973,7 +1015,8 @@ function append_json(string $file, array $item): void {
         $item['amount'] ?? 0,
         $item['provider'] ?? 'paypal',
         $item['status'] ?? 'captured',
-        !empty($item['created_at']) ? date('Y-m-d H:i:s', strtotime($item['created_at'])) : date('Y-m-d H:i:s')
+        !empty($item['created_at']) ? date('Y-m-d H:i:s', strtotime($item['created_at'])) : date('Y-m-d H:i:s'),
+        $item['notification_id'] ?? null
       ]);
       break;
     case 'notifications':
@@ -1040,23 +1083,25 @@ function append_json(string $file, array $item): void {
       ]);
       break;
     case 'waitlist':
-      $stmt = $pdo->prepare('INSERT INTO waitlist (waitlist_id, webinar_id, user_id, created_at) VALUES (?, ?, ?, ?)');
+      $stmt = $pdo->prepare('INSERT INTO waitlist (waitlist_id, webinar_id, user_id, created_at, notification_id) VALUES (?, ?, ?, ?, ?)');
       $stmt->execute([
         $item['id'] ?? '',
         $item['webinar_id'] ?? '',
         $item['user_id'] ?? '',
-        !empty($item['created_at']) ? date('Y-m-d H:i:s', strtotime($item['created_at'])) : date('Y-m-d H:i:s')
+        !empty($item['created_at']) ? date('Y-m-d H:i:s', strtotime($item['created_at'])) : date('Y-m-d H:i:s'),
+        $item['notification_id'] ?? null
       ]);
       break;
     case 'feedback':
-      $stmt = $pdo->prepare('INSERT INTO feedback (feedback_id, webinar_id, user_id, content, rating, created_at) VALUES (?, ?, ?, ?, ?, ?)');
+      $stmt = $pdo->prepare('INSERT INTO feedback (feedback_id, webinar_id, user_id, content, rating, created_at, notification_id) VALUES (?, ?, ?, ?, ?, ?, ?)');
       $stmt->execute([
         $item['id'] ?? '',
         $item['webinar_id'] ?? '',
         $item['user_id'] ?? '',
         $item['content'] ?? '',
         (int)($item['rating'] ?? 0),
-        !empty($item['created_at']) ? date('Y-m-d H:i:s', strtotime($item['created_at'])) : date('Y-m-d H:i:s')
+        !empty($item['created_at']) ? date('Y-m-d H:i:s', strtotime($item['created_at'])) : date('Y-m-d H:i:s'),
+        $item['notification_id'] ?? null
       ]);
       break;
     default:

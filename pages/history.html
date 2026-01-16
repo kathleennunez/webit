@@ -5,7 +5,6 @@
       <h1 class="h4 fw-bold">History</h1>
       <p class="text-muted">Your past registrations.</p>
     </div>
-    <a class="btn btn-outline-primary" href="/app/home.php"><i class="bi bi-arrow-left me-2"></i>Back</a>
   </div>
 
   <div class="glass-panel p-4">
@@ -15,7 +14,7 @@
     <?php foreach ($history as $webinar): ?>
       <div class="d-flex justify-content-between align-items-center border-bottom py-3">
         <div class="d-flex align-items-center gap-3">
-          <img src="<?php echo sanitize($webinar['image'] ?? '/assets/images/webinar-education.svg'); ?>" class="event-thumb" alt="Event thumbnail">
+          <img src="<?php echo sanitize(webinar_image_url($webinar['image'] ?? null)); ?>" class="event-thumb" loading="lazy" decoding="async" width="44" height="44" alt="Event thumbnail">
           <div>
             <a class="fw-semibold text-decoration-none text-dark" href="/app/webinar.php?id=<?php echo sanitize($webinar['id']); ?>">
               <?php echo sanitize($webinar['title']); ?>
@@ -33,6 +32,6 @@
     </div>
   <?php endif; ?>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/assets/js/app.js"></script>
+  <script src="<?php echo asset_url('assets/js/app.js'); ?>"></script>
 </body>
 </html>

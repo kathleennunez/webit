@@ -4,6 +4,7 @@ require_login();
 require_non_admin();
 
 $user = current_user();
+$backLink = previous_page_link('/app/account.php');
 $userId = $user['user_id'] ?? '';
 $emailMessage = '';
 $emailError = '';
@@ -51,6 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       write_json('users.json', $users);
       $_SESSION['user'] = $users[$userIndex];
       $user = $_SESSION['user'];
+      sync_user_update_to_alaehscape($users[$userIndex]);
       $emailMessage = 'Email updated.';
     }
   }
@@ -74,6 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $users[$userIndex]['password_hash'] = password_hash($newPassword, PASSWORD_DEFAULT);
       write_json('users.json', $users);
       $_SESSION['user'] = $users[$userIndex];
+      sync_user_update_to_alaehscape($users[$userIndex], ['password' => $newPassword]);
       $passwordMessage = 'Password updated.';
     }
   }
@@ -89,57 +92,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$deleteError) {
-      $webinars = read_json('webinars.json');
-      $hostedIds = [];
-      $remainingWebinars = [];
-      foreach ($webinars as $webinar) {
-        if (($webinar['user_id'] ?? '') === $userId) {
-          $hostedIds[] = $webinar['id'] ?? '';
-          continue;
-        }
-        $remainingWebinars[] = $webinar;
-      }
-
-      $registrations = read_json('registrations.json');
-      $registrations = array_values(array_filter($registrations, function ($registration) use ($userId, $hostedIds) {
-        $webinarId = $registration['webinar_id'] ?? '';
-        return ($registration['user_id'] ?? '') !== $userId && !in_array($webinarId, $hostedIds, true);
-      }));
-
-      $payments = read_json('payments.json');
-      $payments = array_values(array_filter($payments, function ($payment) use ($userId, $hostedIds) {
-        $webinarId = $payment['webinar_id'] ?? '';
-        return ($payment['user_id'] ?? '') !== $userId && !in_array($webinarId, $hostedIds, true);
-      }));
-
-      $attendance = read_json('attendance.json');
-      $attendance = array_values(array_filter($attendance, function ($record) use ($userId, $hostedIds) {
-        $webinarId = $record['webinar_id'] ?? '';
-        return ($record['user_id'] ?? '') !== $userId && !in_array($webinarId, $hostedIds, true);
-      }));
-
-      $subscriptions = read_json('subscriptions.json');
-      $subscriptions = array_values(array_filter($subscriptions, fn($sub) => ($sub['user_id'] ?? '') !== $userId));
-
-      $notifications = read_json('notifications.json');
-      $notifications = array_values(array_filter($notifications, function ($note) use ($userId) {
-        $payloadUser = $note['payload']['user_id'] ?? '';
-        return $payloadUser !== $userId;
-      }));
-
-      $canceled = read_json('canceled.json');
-      $canceled = array_values(array_filter($canceled, fn($entry) => !in_array(($entry['canceled_id'] ?? ''), $hostedIds, true)));
-
-      $users = array_values(array_filter($users, fn($entry) => ($entry['user_id'] ?? '') !== $userId));
-
-      write_json('webinars.json', $remainingWebinars);
-      write_json('registrations.json', $registrations);
-      write_json('payments.json', $payments);
-      write_json('attendance.json', $attendance);
-      write_json('subscriptions.json', $subscriptions);
-      write_json('notifications.json', $notifications);
-      write_json('canceled.json', $canceled);
-      write_json('users.json', $users);
+      $userForSync = $users[$userIndex] ?? $user;
+      sync_user_delete_to_alaehscape($userForSync);
+      delete_user_account($userId);
 
       logout_user();
       redirect_to('/index.php');

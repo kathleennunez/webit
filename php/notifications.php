@@ -155,6 +155,31 @@ function mark_all_read(string $userId): void {
   write_json('notifications.json', $notifications);
 }
 
+function mark_notification_read(string $userId, string $noteId): bool {
+  if ($noteId === '') {
+    return false;
+  }
+  $notifications = read_json('notifications.json');
+  $updated = false;
+  foreach ($notifications as &$note) {
+    if (($note['id'] ?? '') !== $noteId) {
+      continue;
+    }
+    if (($note['payload']['user_id'] ?? '') !== $userId) {
+      continue;
+    }
+    if (!isset($note['payload']['read']) || $note['payload']['read'] !== true) {
+      $note['payload']['read'] = true;
+      $updated = true;
+    }
+    break;
+  }
+  if ($updated) {
+    write_json('notifications.json', $notifications);
+  }
+  return $updated;
+}
+
 function has_feedback_prompt(string $userId, string $webinarId): bool {
   $notifications = read_json('notifications.json');
   foreach ($notifications as $note) {

@@ -5,6 +5,7 @@ require_non_admin();
 
 $viewer = current_user();
 $profileUser = $viewer;
+$backLink = previous_page_link('/app/home.php');
 $profileId = $_GET['user_id'] ?? '';
 if ($profileId) {
   $found = get_user_by_id($profileId);
@@ -17,7 +18,16 @@ if ($profileId) {
   }
 }
 
-$hostedWebinars = array_values(array_filter(all_webinars(), function ($webinar) use ($profileUser) {
+$canceledWebinars = read_json('canceled.json');
+$canceledIds = array_flip(array_filter(array_map(fn($entry) => $entry['canceled_id'] ?? '', $canceledWebinars)));
+$hostedWebinars = array_values(array_filter(all_webinars(), function ($webinar) use ($profileUser, $canceledIds) {
+  $webinarId = $webinar['id'] ?? '';
+  if (!$webinarId || isset($canceledIds[$webinarId])) {
+    return false;
+  }
+  if (($webinar['status'] ?? 'published') !== 'published') {
+    return false;
+  }
   return ($webinar['user_id'] ?? '') === ($profileUser['user_id'] ?? '');
 }));
 

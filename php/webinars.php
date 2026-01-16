@@ -29,7 +29,8 @@ function create_webinar(array $payload, string $hostId): array {
     'popularity' => (int)($payload['popularity'] ?? 0),
     'image' => $payload['image'] ?? '/assets/images/webinar-education.svg',
     'meeting_url' => $payload['meeting_url'] ?? '',
-    'status' => $payload['status'] ?? 'published'
+    'status' => $payload['status'] ?? 'published',
+    'created_at' => $payload['created_at'] ?? date('c')
   ];
   $webinars[] = $new;
   write_json('webinars.json', $webinars);

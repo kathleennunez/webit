@@ -1,7 +1,6 @@
 <?php include __DIR__ . '/../components/header.php'; ?>
 <div class="container py-5">
   <div class="mb-3">
-    <a class="btn btn-outline-primary btn-sm" href="/app/home.php"><i class="bi bi-arrow-left me-2"></i>Back to Browse</a>
   </div>
   <?php if (!empty($paymentNotice)): ?>
     <div class="alert alert-success d-flex justify-content-between align-items-center gap-2">
@@ -10,7 +9,7 @@
     </div>
   <?php endif; ?>
   <div class="glass-panel p-4 mb-4">
-    <img src="<?php echo sanitize($webinar['image'] ?? '/assets/images/webinar-education.svg'); ?>" class="w-100 rounded-4 mb-4" alt="Webinar preview">
+    <img src="<?php echo sanitize(webinar_image_url($webinar['image'] ?? null)); ?>" class="w-100 rounded-4 mb-4" alt="Webinar preview">
     <div class="d-flex justify-content-between align-items-start">
       <div>
         <span class="badge-soft mb-2 d-inline-block"><?php echo sanitize($webinar['category']); ?></span>
@@ -24,8 +23,8 @@
       </div>
       <div class="d-flex align-items-center gap-2">
         <form method="post" action="/app/save-webinar.php">
-          <input type="hidden" name="webinar_id" value="<?php echo sanitize($webinar); ?>">
-          <input type="hidden" name="redirect" value="/app/webinar.php?id=<?php echo sanitize($webinar); ?>">
+          <input type="hidden" name="webinar_id" value="<?php echo sanitize($webinar['id'] ?? ''); ?>">
+          <input type="hidden" name="redirect" value="/app/webinar.php?id=<?php echo sanitize($webinar['id'] ?? ''); ?>">
           <button class="btn btn-light btn-sm save-btn" type="submit" title="<?php echo $isSaved ? 'Unsave' : 'Save'; ?>">
             <i class="bi bi-bookmark<?php echo $isSaved ? '-fill' : ''; ?>"></i>
           </button>
@@ -82,7 +81,7 @@
         </button>
       <?php endif; ?>
       <?php if ($alreadyRegistered && !$isPast): ?>
-        <form method="post">
+        <form method="post" data-loading-form>
           <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#unregisterModal">
             <?php echo $canRefund ? 'Unregister & Refund' : 'Unregister'; ?>
           </button>
@@ -106,7 +105,7 @@
     <?php endif; ?>
   </div>
 
-  <?php if ($isPast): ?>
+  <?php if ($isPastFeedback): ?>
     <div class="glass-panel p-4">
       <div class="d-flex align-items-center justify-content-between mb-2">
         <h5 class="fw-bold mb-0">Attendee feedback</h5>
@@ -217,7 +216,7 @@
             <input type="hidden" name="register" value="1">
             <button type="submit" class="btn btn-primary" data-register-btn>
               Confirm Registration
-              <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+              <span class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true" data-loading-spinner></span>
             </button>
           </div>
         </form>
@@ -260,7 +259,7 @@
         <div class="modal-body">
           <p class="mb-2">Delete your feedback? This cannot be undone.</p>
           <input type="hidden" name="feedback_id" value="" data-feedback-id>
-          <input type="hidden" name="webinar_id" value="<?php echo sanitize($webinar); ?>">
+          <input type="hidden" name="webinar_id" value="<?php echo sanitize($webinar['id'] ?? ''); ?>">
         </div>
         <div class="modal-footer border-0">
           <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Cancel</button>
@@ -306,6 +305,6 @@
     </div>
   <?php endif; ?>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/assets/js/app.js"></script>
+  <script src="<?php echo asset_url('assets/js/app.js'); ?>"></script>
 </body>
 </html>

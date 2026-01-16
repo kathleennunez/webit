@@ -1,14 +1,14 @@
 <?php
 require_once __DIR__ . '/../php/bootstrap.php';
 require_login();
-require_non_admin();
 
 $user = current_user();
 $hasSubscription = has_active_subscription($user['user_id'] ?? '');
 $message = '';
 $error = '';
 $editing = false;
-$formData = [
+$backLink = previous_page_link('/app/dashboard.php');
+$defaultFormData = [
   'title' => '',
   'description' => '',
   'date' => '',
@@ -22,6 +22,7 @@ $formData = [
   'meeting_url' => '',
   'image' => '/assets/images/webinar-education.svg'
 ];
+$formData = $defaultFormData;
 
 function safe_timezone(string $tz): DateTimeZone {
   try {
@@ -35,7 +36,8 @@ if (!empty($_GET['edit'])) {
   $webinar = get_webinar($_GET['edit']);
   if ($webinar) {
     $webinarStart = strtotime($webinar['datetime'] ?? '');
-    if ($webinarStart && $webinarStart <= time()) {
+    $webinarStatus = $webinar['status'] ?? 'published';
+    if ($webinarStatus === 'published' && $webinarStart && $webinarStart <= time()) {
       redirect_to('/app/host-tools-published.php');
     }
     $editing = true;
@@ -74,10 +76,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_webinar'])) {
   $publishing = !isset($_POST['save_draft']);
   $payload['status'] = $publishing ? 'published' : 'draft';
   $wantsPremium = isset($_POST['premium']);
+  $formData['title'] = trim($_POST['title'] ?? '');
+  $formData['description'] = trim($_POST['description'] ?? '');
+  $formData['date'] = $_POST['date'] ?? '';
+  $formData['start_time'] = $_POST['start_time'] ?? '';
+  $formData['end_time'] = $_POST['end_time'] ?? '';
+  $formData['category'] = $_POST['category'] ?? 'Education';
+  $formData['instructor'] = $_POST['instructor'] ?? full_name($user);
+  $formData['premium'] = $wantsPremium && $hasSubscription;
+  $formData['price'] = $_POST['price'] ?? '';
+  $formData['capacity'] = isset($_POST['capacity']) ? (int)$_POST['capacity'] : 0;
+  $formData['meeting_url'] = $_POST['meeting_url'] ?? '';
   if ($wantsPremium && !$hasSubscription) {
     $payload['premium'] = false;
     $payload['price'] = 0;
-    $error = 'You need an active subscription to publish premium webinars.';
+    if ($publishing) {
+      $error = 'You need an active subscription to publish premium webinars.';
+    }
   } else {
     $payload['price'] = $wantsPremium ? (float)($_POST['price'] ?? 0) : 0;
   }
@@ -119,26 +134,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_webinar'])) {
   }
 
   if (!empty($_FILES['image']['name'])) {
-    $filename = uniqid('webinar_', true) . '_' . basename($_FILES['image']['name']);
-    $uploadDir = __DIR__ . '/../uploads/covers';
-    if (!is_dir($uploadDir)) {
-      mkdir($uploadDir, 0775, true);
-    }
-    $targetPath = $uploadDir . '/' . $filename;
-    if (move_uploaded_file($_FILES['image']['tmp_name'], $targetPath)) {
-      $payload['image'] = '/uploads/covers/' . $filename;
+    if (!empty($_FILES['image']['error'])) {
+      if (empty($error)) {
+        $error = 'Unable to upload the cover image. Please try a smaller file.';
+      }
+    } else {
+      $originalName = (string)($_FILES['image']['name'] ?? '');
+      $baseName = pathinfo($originalName, PATHINFO_FILENAME);
+      $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+      $safeBase = preg_replace('/[^a-zA-Z0-9_-]+/', '-', $baseName);
+      $safeBase = trim((string)$safeBase, '-_');
+      $safeBase = $safeBase !== '' ? $safeBase : 'cover';
+      $filename = uniqid('webinar_', true) . '_' . $safeBase;
+      if ($extension !== '') {
+        $filename .= '.' . $extension;
+      }
+      $uploadDir = __DIR__ . '/../uploads/covers';
+      if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0775, true);
+      }
+      $targetPath = $uploadDir . '/' . $filename;
+      if (move_uploaded_file($_FILES['image']['tmp_name'], $targetPath)) {
+        $payload['image'] = '/uploads/covers/' . $filename;
+        $formData['image'] = $payload['image'];
+      } else {
+        if (empty($error)) {
+          $error = 'Unable to upload the cover image. Please try again.';
+        }
+      }
     }
   }
 
-  if (empty($error) && empty(trim($_POST['meeting_url'] ?? ''))) {
-    $error = 'Meeting URL is required.';
+  if ($publishing && empty($error)) {
+    $meetingUrl = trim($_POST['meeting_url'] ?? '');
+    if ($meetingUrl === '') {
+      $error = 'Meeting URL is required.';
+    } elseif (!filter_var($meetingUrl, FILTER_VALIDATE_URL)) {
+      $error = 'Meeting URL must be a valid link.';
+    }
   }
 
   if (empty($error)) {
     if (!empty($_POST['webinar_id'])) {
       $existing = get_webinar($_POST['webinar_id']);
       $existingStart = $existing ? strtotime($existing['datetime'] ?? '') : false;
-      if ($existingStart && $existingStart <= time()) {
+      $existingStatus = $existing['status'] ?? 'published';
+      if ($existingStatus === 'published' && $existingStart && $existingStart <= time()) {
         $error = 'This webinar has already started and cannot be edited.';
       } else {
         $updated = update_webinar_fields($_POST['webinar_id'], $payload);
@@ -163,6 +204,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_webinar'])) {
     } else {
       create_webinar($payload, $user['user_id'] ?? '');
       $message = $payload['status'] === 'draft' ? 'Draft saved.' : 'Webinar published.';
+      $formData = $defaultFormData;
     }
   }
 }

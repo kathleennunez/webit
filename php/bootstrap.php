@@ -33,6 +33,17 @@ load_env(BASE_PATH . '/.env');
 load_env(BASE_PATH . '/integrations/sms-integration/.env');
 load_env(BASE_PATH . '/integrations/email-integration/.env');
 
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') !== 'XMLHttpRequest')) {
+  $currentUri = $_SERVER['REQUEST_URI'] ?? '';
+  if ($currentUri !== '') {
+    $currentStored = $_SESSION['current_page'] ?? '';
+    if ($currentStored !== '' && $currentStored !== $currentUri) {
+      $_SESSION['last_page'] = $currentStored;
+    }
+    $_SESSION['current_page'] = $currentUri;
+  }
+}
+
 require_once BASE_PATH . '/php/utils.php';
 require_once BASE_PATH . '/php/db.php';
 require_once BASE_PATH . '/php/data.php';

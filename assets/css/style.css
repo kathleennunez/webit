@@ -278,6 +278,16 @@ body {
   text-overflow: ellipsis;
 }
 
+.calendar-event.is-attendee {
+  background: rgba(136, 156, 245, 0.25);
+  border: 1px solid transparent;
+}
+
+.calendar-event.is-host {
+  background: transparent;
+  border: 1px solid rgba(136, 156, 245, 0.5);
+}
+
 .calendar-time {
   font-size: 0.65rem;
   color: var(--muted);
@@ -979,6 +989,45 @@ footer {
 .spinner-border {
   width: 1rem;
   height: 1rem;
+}
+
+.loading-spinner {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-width: 0.2em;
+}
+
+.btn.is-loading {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35), 0 12px 24px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.btn.is-loading::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 999px;
+  border: 2px solid color-mix(in srgb, var(--primary) 65%, transparent);
+  animation: loadingPulse 1.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes loadingPulse {
+  0% {
+    opacity: 0.2;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 0.65;
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 0.2;
+    transform: scale(0.98);
+  }
 }
 
 .icon-pill {

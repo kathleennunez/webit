@@ -12,7 +12,7 @@ $isSaved = $user ? is_webinar_saved($user['user_id'] ?? '', $webinar['id'] ?? ''
   <div class="card glass-panel h-100 card-hover webinar-card">
     <div class="webinar-card-media">
       <a href="/app/webinar.php?id=<?php echo sanitize($webinar['id']); ?>" class="text-decoration-none text-reset card-link">
-        <img src="<?php echo sanitize($webinar['image'] ?? '/assets/images/webinar-education.svg'); ?>" class="card-img-top" alt="Webinar preview">
+        <img src="<?php echo sanitize(webinar_image_url($webinar['image'] ?? null)); ?>" class="card-img-top" alt="Webinar preview" loading="lazy" decoding="async">
       </a>
       <form method="post" action="/app/save-webinar.php" class="save-form">
         <input type="hidden" name="webinar_id" value="<?php echo sanitize($webinar['id']); ?>">
@@ -29,12 +29,12 @@ $isSaved = $user ? is_webinar_saved($user['user_id'] ?? '', $webinar['id'] ?? ''
           <span class="badge bg-warning text-dark">Premium<?php echo isset($webinar['price']) && $webinar['price'] > 0 ? ' • $' . sanitize((string)$webinar['price']) : ''; ?></span>
         <?php endif; ?>
       </div>
-      <a href="/app/webinar.php?id=<?php echo sanitize($webinar); ?>" class="text-decoration-none text-reset card-link">
+      <a href="/app/webinar.php?id=<?php echo sanitize($webinar['id'] ?? ''); ?>" class="text-decoration-none text-reset card-link">
         <h5 class="card-title mb-1"><?php echo sanitize($webinar['title']); ?></h5>
       </a>
       <p class="text-muted mb-3 card-desc"><?php echo sanitize($description); ?></p>
       <div class="d-flex align-items-center gap-2 mb-3">
-        <img src="<?php echo sanitize(avatar_url($hostUser)); ?>" class="avatar-sm" alt="Host">
+        <img src="<?php echo sanitize(avatar_url($hostUser)); ?>" class="avatar-sm" alt="Host" loading="lazy" decoding="async" width="28" height="28">
         <span class="text-muted small">Hosted by <?php echo sanitize($webinar['instructor']); ?></span>
       </div>
       <div class="d-flex justify-content-between">

@@ -27,6 +27,11 @@
             <input type="hidden" name="webinar_id" value="<?php echo sanitize($draft['id']); ?>">
             <button class="btn btn-primary btn-sm">Publish</button>
           </form>
+          <form method="post">
+            <input type="hidden" name="delete_draft" value="1">
+            <input type="hidden" name="webinar_id" value="<?php echo sanitize($draft['id']); ?>">
+            <button class="btn btn-outline-danger btn-sm">Delete</button>
+          </form>
         </div>
       </div>
     <?php endforeach; ?>
@@ -37,6 +42,6 @@
     </div>
   <?php endif; ?>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/assets/js/app.js"></script>
+  <script src="<?php echo asset_url('assets/js/app.js'); ?>"></script>
 </body>
 </html>

@@ -16,6 +16,13 @@ if ($webinarId) {
   }
 }
 
+$isAjax = ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest';
+$acceptHeader = $_SERVER['HTTP_ACCEPT'] ?? '';
+if ($isAjax || strpos($acceptHeader, 'application/json') !== false) {
+  $isSaved = $webinarId ? is_webinar_saved($userId, $webinarId) : false;
+  json_response(['saved' => $isSaved]);
+}
+
 if (!str_starts_with($redirect, '/')) {
   $redirect = '/app/home.php';
 }

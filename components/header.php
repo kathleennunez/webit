@@ -28,6 +28,7 @@ function category_active(string $category, string $currentPage, string $currentC
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
@@ -35,10 +36,10 @@ function category_active(string $category, string $currentPage, string $currentC
     <link href="https://cdn.jsdelivr.net/npm/intl-tel-input@18.2.1/build/css/intlTelInput.css" rel="stylesheet">
   <?php endif; ?>
   <?php if (!empty($includeAiChat)): ?>
-    <link rel="stylesheet" href="/assets/css/ai-chat.css">
+    <link rel="stylesheet" href="<?php echo asset_url('assets/css/ai-chat.css'); ?>">
   <?php endif; ?>
   <link rel="icon" href="/assets/images/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/assets/css/style.css">
+  <link rel="stylesheet" href="<?php echo asset_url('assets/css/style.css'); ?>">
 </head>
 <body class="app-shell">
   <header class="topbar">
@@ -94,12 +95,12 @@ function category_active(string $category, string $currentPage, string $currentC
                   <?php if ($webinarId): ?>
                     <li>
                       <?php if ($webinarStatus === 'canceled'): ?>
-                        <a class="dropdown-item small <?php echo !($note['payload']['read'] ?? false) ? 'notification-unread' : ''; ?>" href="/app/canceled.php?id=<?php echo sanitize($webinarId); ?>&title=<?php echo urlencode($webinarTitle); ?>">
+                        <a class="dropdown-item small <?php echo !($note['payload']['read'] ?? false) ? 'notification-unread' : ''; ?>" href="/app/canceled.php?id=<?php echo sanitize($webinarId); ?>&title=<?php echo urlencode($webinarTitle); ?>" data-notification-id="<?php echo sanitize($note['id'] ?? ''); ?>" data-notification-link>
                           <?php echo sanitize($note['payload']['message'] ?? 'Update'); ?>
                           <div class="text-muted small"><?php echo sanitize($note['created_at']); ?></div>
                         </a>
                       <?php else: ?>
-                        <a class="dropdown-item small <?php echo !($note['payload']['read'] ?? false) ? 'notification-unread' : ''; ?>" href="/app/webinar.php?id=<?php echo sanitize($webinarId); ?>">
+                        <a class="dropdown-item small <?php echo !($note['payload']['read'] ?? false) ? 'notification-unread' : ''; ?>" href="/app/webinar.php?id=<?php echo sanitize($webinarId); ?>" data-notification-id="<?php echo sanitize($note['id'] ?? ''); ?>" data-notification-link>
                           <?php echo sanitize($note['payload']['message'] ?? 'Update'); ?>
                           <div class="text-muted small"><?php echo sanitize($note['created_at']); ?></div>
                         </a>

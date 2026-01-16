@@ -84,6 +84,7 @@ $registrations = read_json('registrations.json');
 $payments = read_json('payments.json');
 $subscriptions = read_json('subscriptions.json');
 $feedback = read_json('feedback.json');
+$smsFeedback = read_json('sms_feedback.json');
 $waitlist = read_json('waitlist.json');
 $canceled = read_json('canceled.json');
 
@@ -222,6 +223,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $payments = read_json('payments.json');
   $subscriptions = read_json('subscriptions.json');
   $feedback = read_json('feedback.json');
+  $smsFeedback = read_json('sms_feedback.json');
   $waitlist = read_json('waitlist.json');
   $canceled = read_json('canceled.json');
 }
@@ -250,6 +252,7 @@ $filteredWebinars = admin_filter_month($webinars, 'datetime', $monthFilter);
 $filteredRegistrations = admin_filter_month($registrations, 'registered_at', $monthFilter);
 $filteredPayments = admin_filter_month($payments, 'created_at', $monthFilter);
 $filteredFeedback = admin_filter_month($feedback, 'created_at', $monthFilter);
+$filteredSmsFeedback = admin_filter_month($smsFeedback, 'created_at', $monthFilter);
 $filteredWaitlist = admin_filter_month($waitlist, 'created_at', $monthFilter);
 $filteredCanceled = admin_filter_month($canceled, 'canceled_at', $monthFilter);
 $adminSnapshot = [
@@ -262,6 +265,7 @@ $adminSnapshot = [
   'payments' => $payments,
   'subscriptions' => $subscriptions,
   'feedback' => $feedback,
+  'sms_feedback' => $smsFeedback,
   'waitlist' => $waitlist,
   'canceled' => $canceled
 ];
@@ -329,6 +333,11 @@ usort($filteredFeedback, function ($a, $b) {
   return strtotime($b['created_at'] ?? '') <=> strtotime($a['created_at'] ?? '');
 });
 $feedbackPage = admin_paginate($filteredFeedback, (int)($_GET['page_feedback'] ?? 1), 8);
+
+usort($filteredSmsFeedback, function ($a, $b) {
+  return strtotime($b['created_at'] ?? '') <=> strtotime($a['created_at'] ?? '');
+});
+$smsFeedbackPage = admin_paginate($filteredSmsFeedback, (int)($_GET['page_sms'] ?? 1), 8);
 
 $webinarMetrics = [];
 foreach ($filteredWebinars as $webinar) {
@@ -426,6 +435,18 @@ if ($export) {
         $entry['webinar_id'] ?? '',
         $entry['rating'] ?? 0,
         $entry['content'] ?? '',
+        $entry['created_at'] ?? ''
+      ]);
+    }
+  } elseif ($export === 'sms_feedback') {
+    fputcsv($output, ['id', 'user_id', 'webinar_id', 'phone', 'message', 'created_at']);
+    foreach ($filteredSmsFeedback as $entry) {
+      fputcsv($output, [
+        $entry['id'] ?? '',
+        $entry['user_id'] ?? '',
+        $entry['webinar_id'] ?? '',
+        $entry['phone'] ?? '',
+        $entry['message'] ?? '',
         $entry['created_at'] ?? ''
       ]);
     }

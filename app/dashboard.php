@@ -27,6 +27,7 @@ $monthLabel = $monthStart->format('F Y');
 $prevMonth = (clone $monthStart)->modify('-1 month')->format('Y-m');
 $nextMonth = (clone $monthStart)->modify('+1 month')->format('Y-m');
 $eventMap = [];
+$eventIndex = [];
 foreach ($registrations as $reg) {
   $webinar = get_webinar($reg['webinar_id']);
   if (!$webinar) {
@@ -41,7 +42,28 @@ foreach ($registrations as $reg) {
   }
   $event = $webinar;
   $event['display_time'] = format_time_for_user($webinar['datetime'] ?? '', $user['timezone'] ?? null);
+  $event['is_host'] = false;
   $eventMap[$key][] = $event;
+  $eventIndex[$key][$event['id']] = true;
+}
+
+$hostedWebinars = array_values(array_filter(all_webinars(), function ($webinar) use ($user) {
+  return ($webinar['user_id'] ?? '') === ($user['user_id'] ?? '')
+    && ($webinar['status'] ?? 'published') === 'published';
+}));
+foreach ($hostedWebinars as $webinar) {
+  $key = date_key_for_user($webinar['datetime'] ?? '', $user['timezone'] ?? null);
+  if (!$key) {
+    continue;
+  }
+  if (!empty($eventIndex[$key][$webinar['id'] ?? ''])) {
+    continue;
+  }
+  $event = $webinar;
+  $event['display_time'] = format_time_for_user($webinar['datetime'] ?? '', $user['timezone'] ?? null);
+  $event['is_host'] = true;
+  $eventMap[$key][] = $event;
+  $eventIndex[$key][$event['id']] = true;
 }
 $calendarWeeks = [];
 $cursor = clone $monthStart;
@@ -63,6 +85,6 @@ while (true) {
   }
 }
 
-$webinars = array_values(array_filter(all_webinars(), fn($w) => ($w['user_id'] ?? '') === ($user['user_id'] ?? '')));
+$webinars = $hostedWebinars;
 
 include __DIR__ . '/../pages/dashboard.html';

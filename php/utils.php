@@ -21,6 +21,36 @@ function sanitize(string $value): string {
   return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 }
 
+function asset_url(string $path): string {
+  $normalized = '/' . ltrim($path, '/');
+  $fullPath = BASE_PATH . $normalized;
+  if (is_file($fullPath)) {
+    return $normalized . '?v=' . filemtime($fullPath);
+  }
+  return $normalized;
+}
+
+function previous_page_link(string $fallback = '/app/dashboard.php'): string {
+  $referer = $_SERVER['HTTP_REFERER'] ?? '';
+  if ($referer === '') {
+    $sessionFallback = $_SESSION['last_page'] ?? '';
+    return $sessionFallback !== '' ? $sessionFallback : $fallback;
+  }
+  $parts = parse_url($referer);
+  $host = $parts['host'] ?? '';
+  $currentHost = $_SERVER['HTTP_HOST'] ?? '';
+  if ($host !== '' && $currentHost !== '' && $host !== $currentHost) {
+    return $fallback;
+  }
+  $path = $parts['path'] ?? '';
+  if ($path === '') {
+    return $fallback;
+  }
+  $query = isset($parts['query']) ? '?' . $parts['query'] : '';
+  $fragment = isset($parts['fragment']) ? '#' . $parts['fragment'] : '';
+  return $path . $query . $fragment;
+}
+
 function get_request_body(): array {
   $raw = file_get_contents('php://input');
   $decoded = json_decode($raw, true);
@@ -58,6 +88,29 @@ function avatar_url(?array $user): string {
     return '/assets/images/avatar-default.svg';
   }
   return $user['avatar'] ?? '/assets/images/avatar-default.svg';
+}
+
+function webinar_image_url(?string $image): string {
+  $default = '/assets/images/webinar-education.svg';
+  if (!$image) {
+    return $default;
+  }
+  if (preg_match('#^https?://#', $image)) {
+    return $image;
+  }
+  $path = $image;
+  $query = '';
+  $fragment = '';
+  if (strpos($path, '#') !== false) {
+    [$path, $fragment] = explode('#', $path, 2);
+    $fragment = '#' . $fragment;
+  }
+  if (strpos($path, '?') !== false) {
+    [$path, $query] = explode('?', $path, 2);
+    $query = '?' . $query;
+  }
+  $segments = array_map('rawurlencode', explode('/', $path));
+  return implode('/', $segments) . $query . $fragment;
 }
 
 function parse_utc_datetime(string $datetime): ?DateTime {

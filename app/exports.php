@@ -8,8 +8,9 @@ $type = $_GET['type'] ?? '';
 $webinarIdFilter = $_GET['webinar_id'] ?? '';
 
 $hostedWebinars = array_values(array_filter(all_webinars(), fn($w) => ($w['user_id'] ?? '') === ($user['user_id'] ?? '')));
+$publishedWebinars = array_values(array_filter($hostedWebinars, fn($w) => ($w['status'] ?? 'published') === 'published'));
 $webinarMap = [];
-foreach ($hostedWebinars as $webinar) {
+foreach ($publishedWebinars as $webinar) {
   $webinarId = $webinar['id'] ?? '';
   if ($webinarId) {
     $webinarMap[$webinarId] = $webinar;
